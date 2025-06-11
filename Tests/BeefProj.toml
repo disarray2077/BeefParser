@@ -1,0 +1,18 @@
+FileVersion = 1
+Dependencies = {corlib = "*", BeefParser = "*"}
+
+[Project]
+Name = "BeefParser.Tests"
+TargetType = "BeefTest"
+StartupObject = "BeefParser.Tests.Program"
+
+[Configs.Debug.Win64]
+DebugWorkingDirectory = "$(ProjectDir)/src"
+
+[[ProjectFolder.Items]]
+Type = "IgnoreSource"
+Name = "MetaTest.bf"
+
+[[ProjectFolder.Items]]
+Type = "IgnoreSource"
+Name = "Test3.bf"

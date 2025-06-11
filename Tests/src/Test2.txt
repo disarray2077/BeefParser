@@ -1,0 +1,70 @@
+namespace Test2
+{
+	class Program
+	{
+		private IEnumerator<T> GetEnumerator(Segment head, Segment tail, int headLow, int tailHigh)
+		{
+			SpinWait spin = new SpinWait();
+
+			if (head == tail)
+			{
+			    for (int i = headLow; i <= tailHigh; i++)
+			    {
+			        // If the position is reserved by an Enqueue operation, but the value is not written into,
+			        // spin until the value is available.
+			        spin.Reset();
+			        while (!head.m_state[i].m_value)
+			        {
+			            spin.SpinOnce();
+			        }
+			        /*yield*/ return head.m_array[i];
+			    }
+			}
+			else
+			{
+			    //iterate on head segment
+			    for (int i = headLow; i < SEGMENT_SIZE; i++)
+			    {
+			        // If the position is reserved by an Enqueue operation, but the value is not written into,
+			        // spin until the value is available.
+			        spin.Reset();
+			        while (!head.m_state[i].m_value)
+			        {
+			            spin.SpinOnce();
+			        }
+			        /*yield*/ return head.m_array[i];
+			    }
+			    //iterate on middle segments
+			    Segment curr = head.Next;
+			    while (curr != tail)
+			    {
+			        for (int i = 0; i < SEGMENT_SIZE; i++)
+			        {
+			            // If the position is reserved by an Enqueue operation, but the value is not written into,
+			            // spin until the value is available.
+			            spin.Reset();
+			            while (!curr.m_state[i].m_value)
+			            {
+			                spin.SpinOnce();
+			            }
+			            /*yield*/ return curr.m_array[i];
+			        }
+			        curr = curr.Next;
+			    }
+
+			    //iterate on tail segment
+			    for (int i = 0; i <= tailHigh; i++)
+			    {
+			        // If the position is reserved by an Enqueue operation, but the value is not written into,
+			        // spin until the value is available.
+			        spin.Reset();
+			        while (!tail.m_state[i].m_value)
+			        {
+			            spin.SpinOnce();
+			        }
+			        /*yield*/ return tail.m_array[i];
+			    }
+			}
+		}
+	}
+}

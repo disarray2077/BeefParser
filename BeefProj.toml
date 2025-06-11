@@ -1,0 +1,6 @@
+FileVersion = 1
+
+[Project]
+Name = "BeefParser"
+TargetType = "BeefLib"
+StartupObject = "BeefParser.Program"

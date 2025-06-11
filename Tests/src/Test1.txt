@@ -1,0 +1,15 @@
+namespace Test1
+{
+	class Program
+	{
+		public static void Main()
+		{
+			GetEnumerator(null, null, 0, 0);
+		}
+
+		private IEnumerator<T> GetEnumerator(Segment head, Segment tail, int headLow, int tailHigh)
+		{
+			Console.WriteLine("{0} {0} {0} {0}", head, tail, headLow, tailHigh);
+		}
+	}
+}
