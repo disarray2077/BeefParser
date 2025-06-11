@@ -227,7 +227,7 @@ namespace BeefParser
 			repeat
 			{
 				// We do this to make sure even the errored Expression gets deleted with the parent node.
-				Expression* expr = arrayType.Sizes.GrowUnitialized(1);
+				Expression* expr = arrayType.Sizes.GrowUninitialized(1);
 				*expr = null;
 
 				if (!tryEat!(TokenType.Comma))
@@ -257,7 +257,7 @@ namespace BeefParser
 				}
 
 				// We do this to make sure even the errored TypeSpec gets deleted with the parent node.
-				TypeSpec* spec = types.GrowUnitialized(1);
+				TypeSpec* spec = types.GrowUninitialized(1);
 				*spec = null;
 				Parse!(typeSpec(ref *spec));
 			}
@@ -758,7 +758,7 @@ namespace BeefParser
 			repeat
 			{
 				// We do this to make sure even the errored TypeSpec gets deleted with the parent node.
-				TypeSpec* spec = specs.GrowUnitialized(1);
+				TypeSpec* spec = specs.GrowUninitialized(1);
 				*spec = null;
 				Parse!(typeSpec(ref *spec));
 			}
@@ -1289,7 +1289,7 @@ namespace BeefParser
 			repeat
 			{
 				// We do this to make sure even the errored ParamDecl gets deleted with the parent node.
-				ParamDecl* decl = vars.GrowUnitialized(1);
+				ParamDecl* decl = vars.GrowUninitialized(1);
 				*decl = null;
 				Try!(paramDecl(ref *decl));
 			}
@@ -1782,7 +1782,7 @@ namespace BeefParser
 					break;
 
 				// We do this to make sure even the errored Expression gets deleted with the parent node.
-				Expression* expr = arrayInitExpr.Values.GrowUnitialized(1);
+				Expression* expr = arrayInitExpr.Values.GrowUninitialized(1);
 				*expr = null;
 				Parse!(expression(ref *expr));
 			}
@@ -1966,7 +1966,7 @@ namespace BeefParser
 			repeat
 			{
 				// We do this to make sure even the errored Expression gets deleted with the parent node.
-				Expression* expr = exprs.GrowUnitialized(1);
+				Expression* expr = exprs.GrowUninitialized(1);
 				*expr = null;
 				Parse!(expression(ref *expr));
 			}
@@ -2925,7 +2925,7 @@ namespace BeefParser
 						repeat
 						{
 							// We do this to make sure even the errored Expression gets deleted with the parent node.
-							Expression* initExpr = forStmt.Initializers.GrowUnitialized(1);
+							Expression* initExpr = forStmt.Initializers.GrowUninitialized(1);
 							*initExpr = null;
 							Parse!(expression(ref *initExpr));
 						} while (tryEat!(TokenType.Comma));
@@ -2961,7 +2961,7 @@ namespace BeefParser
 					repeat
 					{
 						// We do this to make sure even the errored Expression gets deleted with the parent node.
-						Expression* incExpr = forStmt.Incrementors.GrowUnitialized(1);
+						Expression* incExpr = forStmt.Incrementors.GrowUninitialized(1);
 						*incExpr = null;
 						Parse!(expression(ref *incExpr));
 					} while (tryEat!(TokenType.Comma));
@@ -3160,7 +3160,7 @@ namespace BeefParser
 					repeat
 					{
 						// We do this to make sure even the errored Statement gets deleted with the parent node.
-						bodyStmt = section.Body.GrowUnitialized(1);
+						bodyStmt = section.Body.GrowUninitialized(1);
 						*bodyStmt = null;
 					}
 					while (TryParse!(statement(ref *bodyStmt, true)));
@@ -3363,7 +3363,7 @@ namespace BeefParser
 						continue;
 
 					// We do this to make sure even the errored Statement gets deleted with the parent node.
-					Statement* stmt = compundStmt.Statements.GrowUnitialized(1);
+					Statement* stmt = compundStmt.Statements.GrowUninitialized(1);
 					*stmt = null;
 					Parse!(statement(ref *stmt, true));
 				}

@@ -12,10 +12,10 @@ namespace BeefParser
 		}
 		internal static mixin Parse<T>(ParseResult<T> result)
 		{
-			if (result case .Err(var err))
-				return .Err((.)err);
-			if (result case .NotSuitable(var err))
-				return .Err((.)err);
+			if (result case .Err(var err1))
+				return .Err((.)err1);
+			if (result case .NotSuitable(var err2))
+				return .Err((.)err2);
 		}
 
 		internal static mixin TryParseContinue<T>(ParseResult<T> result)
@@ -125,9 +125,9 @@ namespace BeefParser
 
 		public void ReturnValueDiscarded()
 		{
-		    if (this case .NotSuitable(let err))
+		    if (this case .NotSuitable(let err1))
 				Internal.FatalError("Unhandled error in result", 1);
-		    if (this case .Err(let err))
+		    if (this case .Err(let err2))
 				Internal.FatalError("Unhandled error in result", 1);
 			NoDispose<T>();
 		}
