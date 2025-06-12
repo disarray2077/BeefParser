@@ -78,7 +78,7 @@ namespace MyProject
 
 ### Creating AST statements with String Interpolation
 
-This library allows you to create AST statements using Beef’s string interpolation. This is particularly useful for code generation or dynamic AST construction.
+The BeefParser library allows you to create AST statements using Beef’s string interpolation. This is particularly useful for code generation or dynamic AST construction.
 
 In the example below, the `$"""..."""` string is treated as a snippet of source code. When passed to collections like `myStatements`, which expect `Statement` nodes, the `Add` method parses the string into its corresponding AST representation and appends it to the list.
 
@@ -112,6 +112,101 @@ namespace MyProject
             """);
 
             Runtime.Assert(myStatements.Count == 1 && myStatements[0] is IfStmt);
+        }
+    }
+}
+```
+
+### Traversing and Analyzing AST with Custom Visitors
+
+The BeefParser library provides an `ASTVisitor` base class that allows you to traverse and analyze the parsed AST using the visitor pattern.
+
+```bf
+using System;
+using BeefParser;
+using BeefParser.AST;
+
+namespace MyProject
+{
+    class Program
+    {
+        /// Visitor that counts different types of declarations
+        class CodeAnalyzer : ASTVisitor
+        {
+            public int ClassCount = 0;
+            public int MethodCount = 0;
+            public int NamespaceCount = 0;
+
+            // VisitResult controls traversal after this node:
+            // - Continue: Visit the remaining siblings of this node.
+            // - SkipAndContinue: Skip the remaining siblings of this node
+            //                    and continue from the parent's next sibling.
+            // - Stop: Abort the entire traversal immediately.
+            public override VisitResult Visit(ClassDecl node)
+            {
+                ClassCount++;
+                Console.WriteLine($"Found class: {node.Name}");
+                return base.Visit(node); // Continue visiting child nodes
+            }
+
+            public override VisitResult Visit(MethodDecl node)
+            {
+                MethodCount++;
+                Console.WriteLine($"Found method: {node.Name}");
+                return base.Visit(node);
+            }
+
+            public override VisitResult Visit(NamespaceDecl node)
+            {
+                NamespaceCount++;
+                Console.WriteLine($"Found namespace: {node.Name.Value}");
+                return base.Visit(node);
+            }
+        }
+
+        public static void Main()
+        {
+            String beefCode =
+                """
+                namespace MyApp
+                {
+                    public class Calculator
+                    {
+                        public static int Add(int a, int b)
+                        {
+                            return a + b;
+                        }
+
+                        public static int Multiply(int a, int b)
+                        {
+                            return a * b;
+                        }
+                    }
+
+                    public class Logger
+                    {
+                        public static void Log(String message)
+                        {
+                            Console.WriteLine(message);
+                        }
+                    }
+                }
+                """;
+
+            // 1. Parse the code
+            let parser = scope BeefParser(beefCode);
+            Runtime.Assert(parser.Parse(let root) case .Ok, "Parsing failed!");
+            defer delete root;
+
+            // 2. Analyze the AST using the visitor
+            let analyzer = scope CodeAnalyzer();
+            analyzer.Visit(root);
+
+            // 3. Print analysis results
+            Console.WriteLine($"\nAnalysis Results:");
+            Console.WriteLine($"Namespaces: {analyzer.NamespaceCount}");
+            Console.WriteLine($"Classes: {analyzer.ClassCount}");
+            Console.WriteLine($"Methods: {analyzer.MethodCount}");
         }
     }
 }
