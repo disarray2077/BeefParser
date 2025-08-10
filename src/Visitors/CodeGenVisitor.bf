@@ -767,6 +767,13 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 
+	public override VisitResult Visit(DeferStmt deferStmt)
+	{
+		Write!("defer\n", true);
+		Visit(deferStmt.Body);
+		return .Continue;
+	}
+
 	public override VisitResult Visit(DeclarationStmt declStmt)
 	{
 		Write!(declStmt.Declaration.Specification.ToString(.. scope .()));

@@ -25,72 +25,67 @@ public abstract class ASTVisitor
 
 	public virtual VisitResult Visit(AttributedStmt node)
 	{
-		Visit!(node.Statement);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
 	public virtual VisitResult Visit(CompoundStmt node)
 	{
-		for (let ast in node.Statements)
-			Visit!(ast);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
 	public virtual VisitResult Visit(DeferStmt node)
 	{
-		Visit!(node.Body);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
 	public virtual VisitResult Visit(DoStmt node)
 	{
-		Visit!(node.Body);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
 	public virtual VisitResult Visit(UsingStmt node)
 	{
-		Visit!(node.Body);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
 	public virtual VisitResult Visit(IfStmt node)
 	{
-		Visit!(node.ThenStatement);
-		Visit!(node.ElseStatement);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
 	public virtual VisitResult Visit(SwitchStmt node)
 	{
-		for (let section in node.Sections)
-			for (let statement in section.Body)
-				Visit!(statement);
-		Visit!(node.DefaultSection);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
 	public virtual VisitResult Visit(ForStmt node)
 	{
-		Visit!(node.Body);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
 	public virtual VisitResult Visit(ForeachStmt node)
 	{
-		Visit!(node.Body);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
 	public virtual VisitResult Visit(WhileStmt node)
 	{
-		Visit!(node.Body);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
 	public virtual VisitResult Visit(RepeatStmt node)
 	{
-		Visit!(node.Body);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
