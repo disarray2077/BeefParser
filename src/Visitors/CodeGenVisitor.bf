@@ -1541,4 +1541,39 @@ public class CodeGenVisitor : ASTVisitor
 		Visit(node.Expr);
 		return .Continue;
 	}
+
+	public override VisitResult Visit(NewInterpolatedStringOpExpr node)
+	{
+		Write!("new ");
+		Visit(node.Expr);
+		return .Continue;
+	}
+
+	public override VisitResult Visit(InterpolatedStringExpr node)
+	{
+		for (int i = 0; i < node.BraceCount; i++)
+		    Write!('$');
+
+		Write!("\"");
+		for (var expr in node.Exprs)
+		{
+			if (var strLiteral = expr as StrLiteral)
+			{
+				String escapedText = scope .();
+				String.Escape(strLiteral.Value.Ptr, strLiteral.Value.Length, escapedText);
+				Write!(escapedText);
+			}
+			else
+			{
+				for (int i = 0; i < node.BraceCount; i++)
+				    Write!('{');
+				Visit(expr);
+				for (int i = 0; i < node.BraceCount; i++)
+				    Write!('}');
+			}
+		}
+		Write!("\"");
+
+		return .Continue;
+	}
 }

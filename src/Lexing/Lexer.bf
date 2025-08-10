@@ -17,6 +17,9 @@ namespace BeefParser
 
 		private bool _interpolation = false;
 		private bool _interpolationStarted = false;
+		private int _interpolationDollarCount = 0;
+		private bool _isMultilineString = false;
+		private bool _isVerbatimString = false;
 
 		static this()
 		{
@@ -205,44 +208,119 @@ namespace BeefParser
 	        return .(TokenType.Identifier, startPos, result);
 	    }
 
-	    private Result<Token, char8> str(bool isVerbatim, bool isInterpolation = false)
-	    {
-	        var startPos = _pos;
+		private Result<Token, char8> str(bool isVerbatim, bool isMultiline, bool isInterpolation)
+		{
+		    var startPos = _pos;
 
-	        while (true)
-	        {
-				if (_currentChar == '\0' || (!isVerbatim && _currentChar == '\n'))
-					return .Err(_currentChar);
+		    while (true)
+		    {
+		        if (_currentChar == '\0')
+		            return .Err(_currentChar);
 
-				if (isInterpolation && (_currentChar == '{' || _currentChar == '"'))
-					break;
+		        if (!isMultiline && _currentChar == '\n')
+		            return .Err(_currentChar);
 
-	            if (_currentChar == '"')
-	            {
-					advance();
-					if (!isVerbatim || _currentChar != '"')
+		        if (isInterpolation && _currentChar == '{')
+		        {
+				    int braceCount = 0;
+				    int checkPos = _pos;
+				    while (checkPos < _text.Length && _text[checkPos] == '{')
+				    {
+				        braceCount++;
+				        checkPos++;
+				    }
+
+				    // One escaped literal "{" is 2 * _interpolationDollarCount opening braces.
+				    // Consume as many complete escape pairs as possible as plain text.
+				    int pairWidth = 2 * _interpolationDollarCount;
+				    if (braceCount >= pairWidth)
+				    {
+				        int toConsume = (braceCount / pairWidth) * pairWidth;
+				        for (int i = 0; i < toConsume; i++)
+				            advance();
+				        continue;
+				    }
+
+				    if (braceCount == _interpolationDollarCount)
+				        break;
+		        }
+
+				if (!isMultiline)
+				{
+					if (_currentChar == '"')
+						break;
+				}
+				else
+				{
+					if (_currentChar == '"' && peek() == '"' && peek(2) == '"')
 						break;
 				}
 
-				if (!isVerbatim && _currentChar == '\\')
-				{
-					switch (peek())
+		        if (!isVerbatim && !isMultiline && _currentChar == '\\')
+		        {
+		            switch (peek())
+		            {
+						case '"', '\\':
+							advance();
+		            }
+		            // TODO: Parse other escapes: \n, \x03, \u, etc
+		        }
+
+		        advance();
+		    }
+
+		    int length = _pos - startPos;
+
+			// Try to trim the last line if this is a multiline string ending now.
+			if (isMultiline && _currentChar == '"' && peek() == '"' && peek(2) == '"')
+			{
+			    StringView content = .(_text, startPos, length);
+			    int lastNewlineIdx = content.LastIndexOf('\n');
+
+			    if (lastNewlineIdx != -1)
+			    {
+			        bool isLastLineWhitespace = true;
+			        for (int i = lastNewlineIdx + 1; i < content.Length; i++)
+			        {
+			            char8 c = content[i];
+			            if (c != ' ' && c != '\t')
+			            {
+			                isLastLineWhitespace = false;
+			                break;
+			            }
+			        }
+
+			        if (isLastLineWhitespace)
+			        {
+			            length = lastNewlineIdx;
+			        }
+					else
 					{
-					case '"', '\\':
-						advance();
+						return .Err(_currentChar);
 					}
-					
-					// TODO: Parse \1, \x03, etc
+			    }
+				else
+				{
+					return .Err(_currentChar);
 				}
+			}
 
-	            advance();
-	        }		   
+		    StringView result = .(_text, startPos, length);
 
-			int length = (_pos - 1) - startPos;
-			StringView result = .(_text, startPos, length);
+		    if (isInterpolation)
+				return .Ok(.(TokenType.InterpolatedStringText, startPos, result));
 
-	        return .Ok(.(isInterpolation ? TokenType.InterpolatedStringText : TokenType.StringLiteral, startPos, result));
-	    }
+			if (isMultiline)
+			{
+				advance(); advance(); advance(); // """
+			}
+			else
+			{
+				advance(); // "
+			}
+
+			return .Ok(.(TokenType.StringLiteral, startPos, result));
+		}
 
 		private Result<Token, char8> chr()
 		{
@@ -299,34 +377,59 @@ namespace BeefParser
 	        {
 				if (_interpolation)
 				{
-					if (_currentChar == '"')
+					int CountRun(char8 ch)
 					{
-						if (_interpolationStarted)
-							return .Err(_currentChar);
-						advance();
-						_interpolation = false;
-						return .Ok(.(.InterpolatedStringEnd, _pos));
+						int i = 0;
+						while ((_pos + i) < _text.Length && _text[_pos + i] == ch)
+							i++;
+						return i;
 					}
-					else if (_currentChar == '{')
+
+					if (!_interpolationStarted)
 					{
-						if (_interpolationStarted)
-							return .Err(_currentChar);
-						advance();
-						_interpolationStarted = true;
-						return .Ok(.(.InterpolationStart, _pos));
+						if ((!_isMultilineString && _currentChar == '"') ||
+							(_isMultilineString && _currentChar == '"' && peek() == '"' && peek(2) == '"'))
+						{
+							if (_isMultilineString)
+							{
+								advance(); advance(); advance();
+							}
+							else
+							{
+								advance();
+							}
+							_interpolation = false;
+							_isMultilineString = false;
+							_isVerbatimString = false;
+							_interpolationDollarCount = 0;
+							return .Ok(.(.InterpolatedStringEnd, _pos));
+						}
+
+						int openCount = CountRun('{');
+						if (openCount == _interpolationDollarCount)
+						{
+						    for (int i = 0; i < _interpolationDollarCount; i++)
+						        advance();
+
+						    _interpolationStarted = true;
+						    return .Ok(.(.InterpolationStart, _pos));
+						}
+
+						return str(_isVerbatimString, _isMultilineString, true);
 					}
-					else if (_currentChar == '}' && _interpolationStarted)
+					else
 					{
-						advance();
-						_interpolationStarted = false;
-						return .Ok(.(.InterpolationEnd, _pos));
-					}
-					else if (!_interpolationStarted)
-					{
-						return str(false, _interpolation);
+						int closeCount = CountRun('}');
+						if (closeCount >= _interpolationDollarCount)
+						{
+						    for (int i = 0; i < _interpolationDollarCount; i++)
+						        advance();
+
+						    _interpolationStarted = false;
+						    return .Ok(.(.InterpolationEnd, _pos));
+						}
 					}
 				}
-
 
 				if (_currentChar == '#' && isNewLine)
 				{
@@ -360,22 +463,65 @@ namespace BeefParser
 	                continue;
 	            }
 
-	            if (_currentChar == '"' || ((_currentChar == '@' || _currentChar == '$') && peek() == '"'))
+				if (_currentChar == '"' || _currentChar == '@' || _currentChar == '$')
 				{
-					bool isVerbatin = _currentChar == '@';
-					bool isInterpolation = _currentChar == '$';
-					advance();
+					int scanPos = _pos;
+					int dollarCount = 0;
+					bool verbatim = false;
 
-					if (isInterpolation)
+					while (scanPos < _text.Length && (_text[scanPos] == '$' || _text[scanPos] == '@'))
 					{
-						advance();
-						_interpolation = true;
-						return .Ok(.(.InterpolatedStringStart, _pos));
+						if (_text[scanPos] == '$') dollarCount++;
+						if (_text[scanPos] == '@') verbatim = true;
+						scanPos++;
 					}
-					
-					if (isVerbatin)
-						advance();
-	                return str(isVerbatin);
+
+					if (scanPos < _text.Length && _text[scanPos] == '"')
+					{
+						bool multiline = (scanPos + 2 < _text.Length && _text[scanPos + 1] == '"' && _text[scanPos + 2] == '"');
+						int prefixLength = scanPos - _pos;
+
+						for (int i = 0; i < prefixLength; i++)
+						    advance();
+
+						if (multiline)
+						{
+							advance(); advance(); advance(); // """
+							if (_currentChar == '\n')
+							{
+							    advance();
+							}
+							else if (_currentChar == '\r' && peek() == '\n')
+							{
+							    advance();
+							    advance();
+							}
+							else
+							{
+								return .Err(_currentChar);
+							}
+						}
+						else
+						{
+							advance(); // "
+						}
+
+						if (dollarCount > 0)
+						{
+							_interpolation = true;
+							_interpolationStarted = false;
+							_interpolationDollarCount = dollarCount;
+							_isMultilineString = multiline;
+							_isVerbatimString = verbatim;
+
+							var dollarSignsView = StringView(_text, _pos - prefixLength, dollarCount);
+							return .Ok(.(.InterpolatedStringStart, _pos, dollarSignsView));
+						}
+						else
+						{
+							return str(verbatim, multiline, false);
+						}
+					}
 				}
 
 	            if (_currentChar == '\'')

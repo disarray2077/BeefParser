@@ -495,4 +495,16 @@ public abstract class ASTVisitor
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
+
+	public virtual VisitResult Visit(NewInterpolatedStringOpExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(InterpolatedStringExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
 }

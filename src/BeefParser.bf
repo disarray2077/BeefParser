@@ -1870,7 +1870,8 @@ namespace BeefParser
 				switch (_lastToken.Type)
 				{
 				case .InterpolatedStringStart:
-					interpolatedExpr = new InterpolatedStringExpr();
+					int braceCount = _lastToken.AsText().Length;
+					interpolatedExpr = new InterpolatedStringExpr(braceCount);
 					expr = interpolatedExpr;
 				case .InterpolatedStringEnd:
 					return .Ok;
