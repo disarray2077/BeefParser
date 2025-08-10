@@ -1766,10 +1766,11 @@ namespace BeefParser
 
 		public ParseResult<void> arrayInitExpr(ref ArrayInitExpr arrayInitExpr)
 		{
-			if (_currentToken.Type != .LCurly)
+			if (_currentToken.Type != .LCurly && _currentToken.Type != .LParen)
 				return .NotSuitable;
 
-			eat!(TokenType.LCurly);
+			if (!tryEat!(TokenType.LCurly))
+				eat!(TokenType.LParen);
 
 			arrayInitExpr = new .();
 
@@ -1778,7 +1779,7 @@ namespace BeefParser
 
 			repeat
 			{
-				if (_currentToken.Type == TokenType.RCurly)
+				if (_currentToken.Type == TokenType.RCurly || _currentToken.Type == TokenType.RParen)
 					break;
 
 				// We do this to make sure even the errored Expression gets deleted with the parent node.
@@ -1788,7 +1789,8 @@ namespace BeefParser
 			}
 			while (tryEat!(TokenType.Comma));
 
-			eat!(TokenType.RCurly);
+			if (!tryEat!(TokenType.RCurly))
+				eat!(TokenType.RParen);
 			return .Ok;
 		}
 
@@ -2183,6 +2185,8 @@ namespace BeefParser
 						Bind = bind,
 						CommaCount = commaCount
 					};
+
+					return .Ok;
 				}
 				else if (_currentToken.Type == .InterpolatedStringStart)
 				{
@@ -2262,6 +2266,8 @@ namespace BeefParser
 							TryParse!(arrayInitExpr(ref *arrayInitExpr));
 						}
 					}
+
+					return .Ok;
 				}
 			}
 			else if (tryEat!(TokenType.Delete))
