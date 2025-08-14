@@ -142,14 +142,14 @@ namespace BeefParser
 				StringView result = .(_text, startPos, length);
 				var floatingPoint = false;
 
-		        if (_currentChar == '.')
+		        if (_currentChar == '.' && peek() != '.')
 		        {
 					if (floatingPoint)
 						return .Err(_currentChar);
 
 					floatingPoint = true;
 		            advance();
-	
+
 		            while (_currentChar.IsDigit)
 		                advance();
 	
@@ -562,6 +562,7 @@ namespace BeefParser
 						  else 					return Token(TokenType.Assign, position);	 
 				case ';': return Token(TokenType.Semi, position);
 				case '.': if (peek() == '.' && match('.')) { match('.'); return Token(TokenType.DotDotDot, position); }
+						  else if (peek() == '<' && match('.')) { match('<'); return Token(TokenType.UpToRange, position); }
 						  else if (match('.'))			return Token(TokenType.DotDot, position);
 						  else							return Token(TokenType.Dot, position);
 				case ':': if (match(':'))		return Token(TokenType.DoubleColon, position);

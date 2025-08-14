@@ -1993,6 +1993,8 @@ namespace BeefParser
 				   tryEat!(TokenType.DoubleColon) ||
 				   tryEat!(TokenType.Dot) ||
 				   tryEat!(TokenType.DotDot) ||
+				   tryEat!(TokenType.DotDotDot) ||
+				   tryEat!(TokenType.UpToRange) ||
 				   tryEat!(TokenType.NullCond) ||
 				   tryEat!(TokenType.Increment) ||
 				   tryEat!(TokenType.Decrement))
@@ -2083,6 +2085,15 @@ namespace BeefParser
 					expr = memberExpr;
 
 					Parse!(primaryExpr(ref memberExpr.Right));
+				case .DotDotDot, .UpToRange:
+					let rangeExpr = new RangeExpr()
+					{
+						Left = expr,
+						Type = _lastToken.Type
+					};
+					expr = rangeExpr;
+
+					Parse!(primaryExpr(ref rangeExpr.Right));
 				default:
 					expr = new PostfixOpExpr()
 					{

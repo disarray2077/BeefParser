@@ -147,6 +147,7 @@ namespace BeefParser
 		Dot, 		// .
 		DotDot,		// ..
 		DotDotDot,	// ...
+		UpToRange,	// ...
 		Semi, 		// ;
 		LParen, 	// (
 		RParen,		// )
