@@ -65,6 +65,12 @@ public abstract class ASTVisitor
 		return .Continue;
 	}
 
+	public virtual VisitResult Visit(LabeledStmt node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
 	public virtual VisitResult Visit(ForStmt node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
@@ -162,6 +168,12 @@ public abstract class ASTVisitor
 	}
 
 	public virtual VisitResult Visit(EnumDecl node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(TypeAliasDecl node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
@@ -281,6 +293,18 @@ public abstract class ASTVisitor
 		return .Continue;
 	}
 
+	public virtual VisitResult Visit(CascadeMemberExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(AliasedNamespaceMemberExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
 	public virtual VisitResult Visit(MixinMemberExpr node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
@@ -372,6 +396,30 @@ public abstract class ASTVisitor
 	}
 
 	public virtual VisitResult Visit(OutExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(VarExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(LetExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(PointerIndirectionExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(AddressOfExpr node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
@@ -497,7 +545,43 @@ public abstract class ASTVisitor
 		return .Continue;
 	}
 
+	public virtual VisitResult Visit(NewLambdaOpExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
 	public virtual VisitResult Visit(InterpolatedStringExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(RangeExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(DeleteOpExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(CondOpExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(NullCondOpExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(UninitializedExpr node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
