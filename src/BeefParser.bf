@@ -537,7 +537,7 @@ namespace BeefParser
 			if (tryEat!(TokenType.Using))
 			{
 				if (!_usingAllowed)
-					raiseError!(_lastToken.Position, "Using declaration must precede all other declarations.");
+					raiseError!(_lastToken.Position, "Using declaration must precede all other declarations");
 				
 				var type = new UsingDirective();
 
@@ -812,7 +812,7 @@ namespace BeefParser
 			}
 			else if (tryEat!(TokenType.Enum))
 			{
-			    decl = new EnumDecl();
+				decl = new EnumDecl();
 			}
 			else if (tryEat!(TokenType.Extension))
 			{
@@ -880,26 +880,41 @@ namespace BeefParser
 			{
 				scope TemporaryChange<BaseTypeDecl>(ref _context.Type, decl);
 
+				if (tryEat!(TokenType.Colon))
+				{
+					// We do this to make sure even the errored TypeSpec gets deleted with the parent node.
+					TypeSpec* underlyingType = enumDecl.Inheritance.GrowUninitialized(1);
+					*underlyingType = null;
+					Parse!(typeSpec(ref *underlyingType));
+				}
+
 				eat!(TokenType.LCurly);
 
-				repeat
+				if (_currentToken.Type == .Case)
 				{
-					if(!tryEat!(TokenType.Identifier))
-						break;
-					
-					// TODO: Attributes support
-					var key = _lastToken.AsText();
-
-					if (enumDecl.Declarations.ContainsKeyAlt(key))
-						raiseErrorF!(_lastToken.Position, "A field named '{}' has already been declared.", key);
-
-					enumDecl.Declarations.TryAddAlt(key, let keyPtr, let exprPtr);
-					*keyPtr = new String(key);
-					*exprPtr = null;
-
-					if (tryEat!(TokenType.Assign))
-						Parse!(expression(ref *exprPtr));
-				} while (tryEat!(TokenType.Comma));
+					Try!(declarations(ref enumDecl.Declarations));
+				}
+				else
+				{
+					repeat
+					{
+						if(!tryEat!(TokenType.Identifier))
+							break;
+						
+						// TODO: Attributes support
+						var key = _lastToken.AsText();
+	
+						if (enumDecl.SimpleDeclarations.ContainsKeyAlt(key))
+							raiseErrorF!(_lastToken.Position, "A field named '{}' has already been declared.", key);
+	
+						enumDecl.SimpleDeclarations.TryAddAlt(key, let keyPtr, let exprPtr);
+						*keyPtr = new String(key);
+						*exprPtr = null;
+	
+						if (tryEat!(TokenType.Assign))
+							Parse!(expression(ref *exprPtr));
+					} while (tryEat!(TokenType.Comma));
+				}
 
 				eat!(TokenType.RCurly);
 				return .Ok;
@@ -1608,6 +1623,40 @@ namespace BeefParser
 			return .NotSuitable;
 		}
 
+		private ParseResult<void> parseEnumCase(ref List<Declaration> decls)
+		{
+		    if (!tryEat!(TokenType.Case))
+		        return .NotSuitable;
+
+			if (!(_context.Type is EnumDecl))
+				raiseError!(_currentToken.Position, "Enum cases can only be declared within enum types.");
+
+		    var caseDecl = new EnumCaseDecl();
+		    decls.Add(caseDecl);
+
+		    repeat
+		    {
+		        var item = new EnumCaseItem();
+
+		        eat!(TokenType.Identifier);
+		        item.Name = _lastToken.AsText();
+
+		        if (tryEat!(TokenType.LParen))
+		        {
+		            if (_currentToken.Type != TokenType.RParen)
+		                Try!(parseFormalParameters(ref item.Parameters));
+		            eat!(TokenType.RParen);
+		        }
+
+		        caseDecl.Items.Add(item);
+
+		    } while (tryEat!(TokenType.Comma));
+
+		    eat!(TokenType.Semi);
+
+		    return .Ok;
+		}
+
 		private Result<void> declarations(ref List<Declaration> decls, bool isNamespace = false)
 		{
 			while (_currentToken.Type != .RCurly && _currentToken.Type != .EOF)
@@ -1622,6 +1671,7 @@ namespace BeefParser
 
 				if (!isNamespace)
 				{
+					TryParseContinue!(parseEnumCase(ref decls));
 					TryParseContinue!(fieldDecl(ref decls));
 					TryParseContinue!(propertyDecl(ref decls));
 					TryParseContinue!(methodDecl(ref decls));

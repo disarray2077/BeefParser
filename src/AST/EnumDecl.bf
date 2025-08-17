@@ -4,8 +4,10 @@ using System.Collections;
 namespace BeefParser.AST
 {
 	[ImplementAccept, ImplementToString]
-	class EnumDecl : BaseTypeDecl
+	class EnumDecl : TypeDecl
 	{
-		public Dictionary<StringView, Expression> Declarations = new .() ~ Release!(_);
+		public Dictionary<StringView, Expression> SimpleDeclarations = new .() ~ Release!(_);
+
+		public bool IsSimpleEnum => !SimpleDeclarations.IsEmpty;
 	}
 }

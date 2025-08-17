@@ -494,27 +494,52 @@ public class CodeGenVisitor : ASTVisitor
 		Write!("enum ");
 		Write!(enumDecl.Name);
 
+		if (!enumDecl.Inheritance.IsEmpty)
+		{
+			Write!(" : ");
+
+			for (var inh in enumDecl.Inheritance)
+			{
+				Write!(inh.ToString(.. scope .()));
+				if (@inh.Index != enumDecl.Inheritance.Count - 1)
+					Write!(", ");
+			}
+		}
+
 		BreakLine!();
 		WriteLine!("{", true);
 
 		{
 			scope TemporaryChange<int>(ref mIdentation, mIdentation + 1);
 
-			int i = 0;
-			for (var decl in enumDecl.Declarations)
+			if (enumDecl.IsSimpleEnum)
 			{
-				Write!(decl.key, true);
-
-				if (decl.value != null)
+				int i = 0;
+				for (var decl in enumDecl.SimpleDeclarations)
 				{
-					Write!(" = ");
-					Visit(decl.value);
+					Write!(decl.key, true);
+	
+					if (decl.value != null)
+					{
+						Write!(" = ");
+						Visit(decl.value);
+					}
+	
+					if (++i != enumDecl.Declarations.Count)
+					{
+						Write!(",");
+						BreakLine!();
+					}
 				}
-
-				if (++i != enumDecl.Declarations.Count)
+			}
+			else
+			{
+				for (var decl in enumDecl.Declarations)
 				{
-					Write!(",");
-					BreakLine!();
+					Visit(decl);
+
+					if (@decl.Index != enumDecl.Declarations.Count - 1 && (decl is BaseTypeDecl || decl is MethodDecl))
+						BreakLine!();
 				}
 			}
 		}
