@@ -10,7 +10,7 @@ namespace BeefParser.AST
 		public List<String> GenericParametersNames = new .() ~ Release!(_);
 		public List<GenericConstraintDecl> GenericConstraints = new .() ~ Release!(_);
 		public List<ParamDecl> FormalParameters = new .() ~ Release!(_);
-		public List<Statement> Statements ~ delete _;
+		public List<Statement> Statements = new .() ~ Release!(_);
 		public Expression ReturnExpr ~ delete _;
 
 		public StringView Name

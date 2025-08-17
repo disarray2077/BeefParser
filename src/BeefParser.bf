@@ -585,7 +585,7 @@ namespace BeefParser
 		{
 			if (tryEat!(TokenType.Namespace))
 			{
-				var decl = new NamespaceDecl();
+				let decl = new NamespaceDecl();
 				decls.Add(decl);
 
 				Try!(parseName(ref decl.Name));
@@ -1458,7 +1458,7 @@ namespace BeefParser
 
 			rollback.Cancel();
 
-			var decl = new MixinDecl()
+			let decl = new MixinDecl()
 			{
 				Attributes = attrs,
 				AccessLevel = level,
@@ -1620,7 +1620,7 @@ namespace BeefParser
 			{
 				rollback.Cancel();
 
-				var decl = new MethodDecl()
+				let decl = new MethodDecl()
 				{
 					Attributes = attrs,
 					AccessLevel = level,
@@ -2504,7 +2504,7 @@ namespace BeefParser
 						}
 					}
 
-					return .Ok;
+					//return .Ok;
 				}
 			}
 			else if (tryEat!(TokenType.Delete))
