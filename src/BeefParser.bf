@@ -1595,8 +1595,26 @@ namespace BeefParser
 
 		private ParseResult<void> typeAliasDecl(ref List<Declaration> decls)
 		{
+			ScopedValueRollback<int> rollback = scope .(ref _tokenIndex);
+
+			defer
+			{
+				if (!rollback.Cancelled)
+					_lastFailureIndex = _tokenIndex;
+			}
+
+			AccessLevel level = .Undefined;
+
+			while (isAccessModifier(_currentToken.Type))
+			{
+				Try!(parseAccessLevel(ref level));
+			}
+
 			if (tryEat!(TokenType.TypeAlias))
 			{
+				rollback.Cancel();
+				_usingAllowed = false;
+
 				eat!(TokenType.Identifier);
 
 				let typeAlias = new TypeAliasDecl()
