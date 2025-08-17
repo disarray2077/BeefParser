@@ -81,6 +81,12 @@ namespace BeefParser
 			return parser.ParseTo(outStatements);
 		}
 
+		public static Result<void> ParseTo(String code, out Expression outExpr)
+		{
+			let parser = scope BeefParser(code);
+			return parser.ParseTo(out outExpr);
+		}
+
 		public Result<void> ParseTo(List<Statement> outStatements, int index)
 		{
 			_tokenIndex = 0;
@@ -99,6 +105,18 @@ namespace BeefParser
 				statementCount++;
 			}
 
+			return .Ok;
+		}
+
+		public Result<void> ParseTo(out Expression outExpr)
+		{
+			outExpr = null;
+
+			_tokenIndex = 0;
+			if (_tokens.IsEmpty)
+				Try!(readTokens());
+
+			Parse!(expression(ref outExpr));
 			return .Ok;
 		}
 
@@ -2570,7 +2588,7 @@ namespace BeefParser
 			TryParse!(additiveExpr(ref expr));
 
 			if (tryEat!(TokenType.LShift) ||
-			    (_nextToken.Type == .RArrow && tryEat!(TokenType.RArrow)))
+			    (_currentToken.Type != .EOF && _nextToken.Type == .RArrow && tryEat!(TokenType.RArrow)))
 			{
 				if (_lastToken.Type == .RArrow && _currentToken.Type == .RArrow)
 					eat!(TokenType.RArrow);
