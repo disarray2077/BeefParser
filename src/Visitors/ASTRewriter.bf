@@ -115,6 +115,14 @@ namespace BeefParser.AST
             return delDecl;
         }
 
+        public override ASTNode Visit(MixinDecl mixinDecl)
+        {
+            VisitList(mixinDecl.FormalParameters);
+            VisitList(mixinDecl.Statements);
+			mixinDecl.ReturnExpr = (Expression)Visit(mixinDecl.ReturnExpr);
+            return mixinDecl;
+        }
+
         public override ASTNode Visit(MethodDecl methodDecl)
         {
             methodDecl.Specification = (TypeSpec)Visit(methodDecl.Specification);

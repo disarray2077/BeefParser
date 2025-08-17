@@ -137,9 +137,15 @@ public abstract class ASTVisitor
 		return .Continue;
 	}
 
+	public virtual VisitResult Visit(MixinDecl node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
 	public virtual VisitResult Visit(MethodDecl node)
 	{
-		Visit!(node.CompoundStmt);
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
 	}
 
@@ -610,6 +616,7 @@ public interface IASTVisitorWithCustomResult
 	public virtual TResult Visit(StructDecl node) => default;
 	public virtual TResult Visit(InterfaceDecl node) => default;
 	public virtual TResult Visit(ExtensionDecl node) => default;
+	public virtual TResult Visit(MixinDecl node) => default;
 	public virtual TResult Visit(MethodDecl node) => default;
 	public virtual TResult Visit(AttributedStmt node) => default;
 	public virtual TResult Visit(CompoundStmt node) => default;
@@ -715,6 +722,7 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public virtual TResult Visit(StructDecl node) => default;
 	public virtual TResult Visit(InterfaceDecl node) => default;
 	public virtual TResult Visit(ExtensionDecl node) => default;
+	public virtual TResult Visit(MixinDecl node) => default;
 	public virtual TResult Visit(MethodDecl node) => default;
 	public virtual TResult Visit(AttributedStmt node) => default;
 	public virtual TResult Visit(CompoundStmt node) => default;
@@ -812,6 +820,7 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public Object IASTVisitorWithCustomResult.Visit(StructDecl node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(InterfaceDecl node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(ExtensionDecl node) => ((Self)this).Visit(node);
+	public Object IASTVisitorWithCustomResult.Visit(MixinDecl node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(MethodDecl node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(AttributedStmt node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(CompoundStmt node) => ((Self)this).Visit(node);

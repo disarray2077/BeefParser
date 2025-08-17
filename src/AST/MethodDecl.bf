@@ -17,7 +17,6 @@ namespace BeefParser.AST
 		public bool IsConstructor;
 		public bool IsDestructor;
 		public bool IsOperator;
-		public bool IsMixin;
 		public bool IsMutable;
 		public OperatorType OperatorType;
 

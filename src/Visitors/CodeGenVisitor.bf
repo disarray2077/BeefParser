@@ -717,6 +717,110 @@ public class CodeGenVisitor : ASTVisitor
 		}
 		Write!("]");
 	}
+
+	public override VisitResult Visit(MixinDecl mixinDecl)
+	{
+		if (!mixinDecl.Attributes.IsEmpty)
+		{
+			Write!("", true);
+			WriteAttributes(mixinDecl.Attributes);
+			BreakLine!();
+		}
+
+		Write!("", true);
+
+		// Beef has no support for unsafe modifier
+		if (mixinDecl.Modifiers.HasFlag(.Unsafe))
+			mixinDecl.Modifiers &= ~.Unsafe;
+
+		WriteAccessLevel(mixinDecl.AccessLevel);
+		WriteModifiers(mixinDecl.Modifiers);
+		Write!(" mixin ");
+		Write!(mixinDecl.Name);
+
+		if (!mixinDecl.GenericParametersNames.IsEmpty)
+		{
+			Write!("<");
+			for (var param in mixinDecl.GenericParametersNames)
+			{
+				Write!(param);
+				if (@param.Index != mixinDecl.GenericParametersNames.Count - 1)
+					Write!(", ");
+			}
+			Write!(">");
+		}
+
+		Write!("(");
+
+		for (var param in mixinDecl.FormalParameters)
+		{
+			WriteParamDecl(param);
+			if (@param.Index != mixinDecl.FormalParameters.Count - 1)
+				Write!(", ");
+		}
+
+		Write!(")");
+
+		if (mixinDecl.Modifiers.HasFlag(.Abstract) || mixinDecl.Modifiers.HasFlag(.Extern))
+		{
+			Write!(";");
+			BreakLine!();
+		}
+		else
+		{
+			BreakLine!();
+
+			if (!mixinDecl.GenericConstraints.IsEmpty)
+			{
+				mIdentation += 1;
+				defer { mIdentation -= 1; }
+
+				for (let constraintDecl in mixinDecl.GenericConstraints)
+				{
+					Write!("where ", true);
+					Write!(constraintDecl.Target);
+					Write!(" : ");
+					for (int idx = 0; idx < constraintDecl.Constraints.Count; idx++)
+					{
+						let paramConstraint = constraintDecl.Constraints[idx];
+						switch(paramConstraint.GetType())
+						{
+						case typeof(TypeConstraint):
+							TypeConstraint typeParamConstraint = (TypeConstraint)paramConstraint;
+							Write!(typeParamConstraint.TypeSpec.ToString(.. scope .()));
+						default:
+							Write!(paramConstraint.Text);
+						}
+
+						if (idx != constraintDecl.Constraints.Count - 1)
+							Write!(", ");
+					}
+				}
+
+				BreakLine!();
+			}
+
+			WriteLine!("{", true);
+			{
+				scope TemporaryChange<int>(ref mIdentation, mIdentation + 1);
+
+				Write!("", true);
+
+			    for (var stmt in mixinDecl.Statements)
+			        Visit(stmt);
+
+			    if (mixinDecl.ReturnExpr != null)
+			    {
+			        Write!("", true);
+			        Visit(mixinDecl.ReturnExpr);
+			        BreakLine!();
+			    }
+			}
+			WriteLine!("}", true);
+		}
+
+		return .Continue;
+	}
 	
 	public override VisitResult Visit(MethodDecl methodDecl)
 	{
@@ -735,9 +839,6 @@ public class CodeGenVisitor : ASTVisitor
 
 		WriteAccessLevel(methodDecl.AccessLevel);
 		WriteModifiers(methodDecl.Modifiers);
-
-		if (methodDecl.IsMixin)
-			Write!("mixin ");
 
 		if (methodDecl.IsOperator)
 		{

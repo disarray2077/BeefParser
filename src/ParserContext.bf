@@ -9,7 +9,8 @@ namespace BeefParser
 	{
 		Undefined,
 		MemberInit,
-		Assignment
+		Assignment,
+		BlockExpression
 	}
 
 	internal class ParserContext
@@ -18,6 +19,7 @@ namespace BeefParser
 		public NamespaceDecl Namespace;
 		public BaseTypeDecl Type;
 		public MethodDecl Method;
+		public MixinDecl Mixin;
 		public ContextScopeType ScopeType;
 	}
 }

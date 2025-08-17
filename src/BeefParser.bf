@@ -1423,6 +1423,98 @@ namespace BeefParser
 
 			return .Ok;
 		}
+
+		private ParseResult<void> mixinDecl(ref List<Declaration> decls)
+		{
+			ScopedValueRollback<int> rollback = scope .(ref _tokenIndex);
+
+			defer
+			{
+				if (!rollback.Cancelled)
+					_lastFailureIndex = _tokenIndex;
+			}
+
+			List<AttributeSpec> attrs = new .();
+
+			defer
+			{
+				if (!rollback.Cancelled)
+					Release!(attrs);
+			}
+
+			while (TryParse!(parseAttributes(ref attrs))) { }
+
+			AccessLevel level = .Undefined;
+			Modifier modifier = .None;
+
+			while (isModifier(_currentToken.Type) || isAccessModifier(_currentToken.Type))
+			{
+				Try!(parseAccessLevel(ref level));
+				Try!(parseModifier(ref modifier));
+			}
+
+			if (!tryEat!(TokenType.Mixin))
+				return .NotSuitable;
+
+			rollback.Cancel();
+
+			var decl = new MixinDecl()
+			{
+				Attributes = attrs,
+				AccessLevel = level,
+				Modifiers = modifier
+			};
+			decls.Add(decl);
+
+			eat!(TokenType.Identifier);
+			decl.Name = _lastToken.AsText();
+
+			// Parse Generic Parameters
+			if (tryEat!(TokenType.LArrow))
+			{
+				Try!(parseGenericParametersNames(ref decl.GenericParametersNames));
+				eat!(TokenType.RArrow);
+			}
+
+			if (tryEat!(TokenType.LParen) && !tryEat!(TokenType.RParen))
+			{
+				Try!(parseFormalParameters(ref decl.FormalParameters));
+				eat!(TokenType.RParen);
+			}
+
+			TryParse!(parseGenericConstraints(ref decl.GenericConstraints));
+
+			scope TemporaryChange<MixinDecl>(ref _context.Mixin, decl);
+
+			if (!tryEat!(TokenType.LCurly))
+			{
+				if (_currentToken.Type == TokenType.Semi && !decl.Modifiers.HasFlag(.Abstract) && !decl.Modifiers.HasFlag(.Extern) && _context.Type.GetType() != typeof(InterfaceDecl) && !_context.Type.Modifiers.HasFlag(.Abstract))
+					raiseError!(_currentToken.Position, "Non-abstract and non-extern method must declare a body");
+				eat!(TokenType.Semi);
+				return .Ok;
+			}
+
+			while (_currentToken.Type != .RCurly)
+			{
+				int lastTokenIndex = _tokenIndex;
+
+			    Statement tempStmt = null;
+			    if (statement(ref tempStmt, true) case .Ok)
+			    {
+			        decl.Statements.Add(tempStmt);
+			        continue;
+			    }
+
+				_tokenIndex = lastTokenIndex;
+			    
+			    Parse!(expression(ref decl.ReturnExpr));
+			    break;
+			}
+
+			eat!(TokenType.RCurly);
+
+			return .Ok;
+		}
 		
 		private ParseResult<void> methodDecl(ref List<Declaration> decls)
 		{
@@ -1458,7 +1550,6 @@ namespace BeefParser
 			bool isConstructor = false;
 			bool isDestructor = false;
 			bool isOperator = false;
-			bool isMixin = false;
 			TypeSpec typeSpec = null;
 
 			if (_currentToken.Type == TokenType.Tilde && _nextToken.Type == TokenType.Identifier)
@@ -1502,7 +1593,7 @@ namespace BeefParser
 				}
 
 				if (tryEat!(TokenType.Mixin))
-					isMixin = true;
+					return .NotSuitable;
 				else if (!TryParse!(typeSpec(ref typeSpec)))
 					return .NotSuitable;
 
@@ -1538,7 +1629,6 @@ namespace BeefParser
 					IsConstructor = isConstructor,
 					IsDestructor = isDestructor,
 					IsOperator = isOperator,
-					IsMixin = isMixin,
 					OperatorType = opType
 				};
 				decls.Add(decl);
@@ -1708,6 +1798,7 @@ namespace BeefParser
 				if (!isNamespace)
 				{
 					TryParseContinue!(parseEnumCase(ref decls));
+					TryParseContinue!(mixinDecl(ref decls));
 					TryParseContinue!(fieldDecl(ref decls));
 					TryParseContinue!(propertyDecl(ref decls));
 					TryParseContinue!(methodDecl(ref decls));
@@ -3387,16 +3478,21 @@ namespace BeefParser
 			switch (expression(ref expr))
 			{
 			case .Ok:
-				// Is this the right way to do it...?
-				let isMixinReturn = _context.Method?.IsMixin == true && _currentToken.Type == .RCurly;
-				if (!isMixinReturn)
+				let isMixin = _context.Mixin != null && _context.Mixin.ReturnExpr == null;
+				let isBlockExpr = _context.ScopeType == .BlockExpression;
+				if ((isMixin || isBlockExpr) && _currentToken.Type == .RCurly)
+				{
+					delete expr;
+					return .NotSuitable;
+				}
+				else
 				{
 					if (!isExprValidStatement(expr))
 					{
 						delete expr;
 						raiseError!(_lastToken.Position, "Only assignment, call, increment, decrement, await, and new/delete object expressions can be used as a statement");
 					}
-	
+
 					if (needSemi && !tryEat!(TokenType.Semi))
 					{
 						delete expr;

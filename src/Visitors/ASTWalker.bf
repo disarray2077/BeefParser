@@ -126,6 +126,13 @@ namespace BeefParser.AST
             return VisitList(delDecl.FormalParameters);
         }
 
+        public override VisitResult Visit(MixinDecl mixinDecl)
+        {
+            if (VisitList(mixinDecl.FormalParameters) == VisitResult.Stop) return VisitResult.Stop;
+            if (VisitList(mixinDecl.Statements) == VisitResult.Stop) return VisitResult.Stop;
+			return Visit(mixinDecl.ReturnExpr);
+        }
+
         public override VisitResult Visit(MethodDecl methodDecl)
         {
             if (Visit(methodDecl.Specification) == VisitResult.Stop) return VisitResult.Stop;
