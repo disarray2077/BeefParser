@@ -2256,6 +2256,13 @@ namespace BeefParser
 					{
 						bind = .Mixin;
 					}
+					else if (tryEat!(TokenType.LParen))
+					{
+						bind = .Custom(null);
+						if (bind case .Custom(var ref bindExpr))
+							Parse!(expression(ref bindExpr));
+						eat!(TokenType.RParen);
+					}
 					else
 					{
 						bind = .Custom(null);
