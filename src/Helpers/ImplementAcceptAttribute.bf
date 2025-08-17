@@ -19,6 +19,13 @@ struct ImplementAcceptAttribute : Attribute, IOnTypeInit
 				case .Stop:
 					return .Stop;
 				}
+			}\n
+			""");
+		Compiler.EmitTypeBody(type,
+			"""
+			public override System.Object AcceptWithCustomResult(IASTVisitorWithCustomResult visitor)
+			{
+				return visitor.Visit(this);
 			}
 			""");
 	}
