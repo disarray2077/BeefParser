@@ -13,7 +13,7 @@ namespace BeefParser.AST
 	[ImplementAccept, ImplementToString]
 	public class VariableDeclarator : ASTNode
 	{
-		public String mName ~ delete _;
+		private String mName ~ delete _;
 		public Expression Initializer ~ delete _;
 		public Statement Finalizer ~ delete _;
 

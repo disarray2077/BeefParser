@@ -1135,10 +1135,10 @@ public class CodeGenVisitor : ASTVisitor
 		for (let section in switchStmt.Sections)
 		{
 			Write!("case ", true);
-			for (let expr in section.Exprs)
+			for (let expr in section.Labels)
 			{
 				Visit(expr);
-				if (@expr.Index < section.Exprs.Count - 1)
+				if (@expr.Index < section.Labels.Count - 1)
 					Write!(", ");
 			}
 			if (section.WhenExpr != null)
@@ -1148,10 +1148,10 @@ public class CodeGenVisitor : ASTVisitor
 			}
 			WriteLine!(":");
 
-			if (!section.Body.IsEmpty)
+			if (!section.Statements.IsEmpty)
 			{
 				scope TemporaryChange<int>(ref mIdentation, mIdentation + 1);
-				for (let stmt in section.Body)
+				for (let stmt in section.Statements)
 					Visit(stmt);
 			}
 		}
@@ -1159,10 +1159,10 @@ public class CodeGenVisitor : ASTVisitor
 		if (switchStmt.DefaultSection != null)
 		{
 			WriteLine!("default:", true);
-			if (!switchStmt.DefaultSection.Body.IsEmpty)
+			if (!switchStmt.DefaultSection.Statements.IsEmpty)
 			{
 				scope TemporaryChange<int>(ref mIdentation, mIdentation + 1);
-				for (let stmt in switchStmt.DefaultSection.Body)
+				for (let stmt in switchStmt.DefaultSection.Statements)
 					Visit(stmt);
 			}
 		}
@@ -1558,6 +1558,12 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 
+	public override VisitResult Visit(FallthroughStmt fallthroughStmt)
+	{
+		Write!("fallthrough;");
+		return .Continue;
+	}
+
 	public override VisitResult Visit(CastExpr castExpr)
 	{
 		Write!("("); // TODO: Check if parenteses is necessary
@@ -1722,8 +1728,6 @@ public class CodeGenVisitor : ASTVisitor
 
 	public override VisitResult Visit(ArrayTypeSpec node)
 	{
-		Debug.Assert(node.Sizes.IsEmpty || node.Sizes.All((s) => s == null));
-
 		Visit(node.Element);
 
 		Write!("[");

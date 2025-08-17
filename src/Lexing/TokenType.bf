@@ -98,6 +98,7 @@ namespace BeefParser
 		Break,
 		Continue,
 		Yield,
+		Fallthrough,
 
 		Implicit,
 		Explicit,
@@ -147,7 +148,7 @@ namespace BeefParser
 		Dot, 		// .
 		DotDot,		// ..
 		DotDotDot,	// ...
-		UpToRange,	// ...
+		UpToRange,	// ..<
 		Semi, 		// ;
 		LParen, 	// (
 		RParen,		// )

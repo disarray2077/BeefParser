@@ -14,8 +14,8 @@ namespace BeefParser.AST
 	[ImplementAccept, ImplementToString]
 	public class SwitchSection : ASTNode
 	{
-		public List<Expression> Exprs = new .() ~ Release!(_);
+		public List<Expression> Labels = new .() ~ Release!(_);
 		public Expression WhenExpr ~ delete _;
-		public List<Statement> Body = new .() ~ Release!(_);
+		public List<Statement> Statements = new .() ~ Release!(_);
 	}
 }

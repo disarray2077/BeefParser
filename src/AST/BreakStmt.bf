@@ -1,8 +1,10 @@
+using System;
+
 namespace BeefParser.AST
 {
 	[ImplementAccept, ImplementToString]
 	class BreakStmt : Statement
 	{
-		public Expression Target ~ delete _;
+		public StringView TargetLabel;
 	}
 }

@@ -2812,13 +2812,16 @@ namespace BeefParser
 		{
 			if (tryEat!(TokenType.Continue))
 			{
-				Expression target = null;
+				StringView targetLabel = default;
 				if (_currentToken.Type != .Semi)
-					Parse!(expression(ref target));
+				{
+					eat!(TokenType.Identifier);
+					targetLabel = _lastToken.AsText();
+				}
 				eat!(TokenType.Semi);
 				stmt = new ContinueStmt()
 				{
-					Target = target
+					TargetLabel = targetLabel
 				};
 				return .Ok;
 			}
@@ -2830,14 +2833,29 @@ namespace BeefParser
 		{
 			if (tryEat!(TokenType.Break))
 			{
-				Expression target = null;
+				StringView targetLabel = default;
 				if (_currentToken.Type != .Semi)
-					Parse!(expression(ref target));
+				{
+					eat!(TokenType.Identifier);
+					targetLabel = _lastToken.AsText();
+				}
 				eat!(TokenType.Semi);
 				stmt = new BreakStmt()
 				{
-					Target = target
+					TargetLabel = targetLabel
 				};
+				return .Ok;
+			}
+
+			return .NotSuitable;
+		}
+
+		private ParseResult<void> fallthroughStmt(ref Statement stmt)
+		{
+			if (tryEat!(TokenType.Fallthrough))
+			{
+				eat!(TokenType.Semi);
+				stmt = new FallthroughStmt();
 				return .Ok;
 			}
 
@@ -3157,7 +3175,7 @@ namespace BeefParser
 						{
 							Expression expr = null;
 							Parse!(expression(ref expr));
-							section.Exprs.Add(expr);
+							section.Labels.Add(expr);
 						}
 						while (tryEat!(TokenType.Comma));
 	
@@ -3178,10 +3196,13 @@ namespace BeefParser
 					repeat
 					{
 						// We do this to make sure even the errored Statement gets deleted with the parent node.
-						bodyStmt = section.Body.GrowUninitialized(1);
+						bodyStmt = section.Statements.GrowUninitialized(1);
 						*bodyStmt = null;
 					}
 					while (TryParse!(statement(ref *bodyStmt, true)));
+
+					// The last one will always be a failed attempt.
+					section.Statements.PopBack();
 				}
 				
 				eat!(TokenType.RCurly);
@@ -3335,6 +3356,7 @@ namespace BeefParser
 			TryParseReturn!(returnStmt(ref stmt));
 			TryParseReturn!(continueStmt(ref stmt));
 			TryParseReturn!(breakStmt(ref stmt));
+			TryParseReturn!(fallthroughStmt(ref stmt));
 			TryParseReturn!(forStmt(ref stmt));
 			TryParseReturn!(whileStmt(ref stmt));
 			TryParseReturn!(repeatStmt(ref stmt));

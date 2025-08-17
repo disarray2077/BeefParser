@@ -383,6 +383,12 @@ public abstract class ASTVisitor
 		return .Continue;
 	}
 
+	public virtual VisitResult Visit(FallthroughStmt node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
 	public virtual VisitResult Visit(CastExpr node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
