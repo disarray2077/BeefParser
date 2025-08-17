@@ -2065,6 +2065,42 @@ namespace BeefParser
 			}
 		}
 
+		private ParseResult<void> blockExpr(ref Expression expr)
+		{
+		    if (_nextToken.Type == .RCurly)
+		        return .NotSuitable;
+
+		    eat!(TokenType.LCurly);
+
+		    let blockExpr = new BlockExpr();
+		    ensureNull!(expr) = blockExpr;
+
+			scope TemporaryChange<ContextScopeType>(ref _context.ScopeType, .BlockExpression);
+
+		    while (_currentToken.Type != .RCurly)
+		    {
+				int lastTokenIndex = _tokenIndex;
+
+		        Statement tempStmt = null;
+		        if (statement(ref tempStmt, true) case .Ok)
+		        {
+		            blockExpr.Statements.Add(tempStmt);
+		            continue;
+		        }
+
+				_tokenIndex = lastTokenIndex;
+		        
+		        Parse!(expression(ref blockExpr.ResultExpr));
+		        break;
+		    }
+
+			if (blockExpr.ResultExpr == null)
+				raiseError!(_currentToken.Position, "Expression blocks must end in an expression which is missing its terminating semicolon");
+
+		    eat!(TokenType.RCurly);
+		    return .Ok;
+		}
+
 		private ParseResult<void> primaryExpr(ref Expression expr)
 		{
 			ScopedValueRollback<int> rollback = scope .(ref _tokenIndex, true);
@@ -2119,17 +2155,22 @@ namespace BeefParser
 
 				eat!(TokenType.RParen);
 				return .Ok;
-			case .LCurly when _context.ScopeType == .Assignment || _context.ScopeType == .MemberInit:
-				// TODO: Don't allow this case when we aren't currently in an array scope.
-				ArrayInitExpr arrayInitExpr = null;
-				if (!TryParse!(arrayInitExpr(ref arrayInitExpr)))
-				{
-					rollback.Rollback();
-					return .NotSuitable;
-				}
+			case .LCurly:
+				TryParseReturn!(blockExpr(ref expr));
 
-				ensureNull!(expr) = arrayInitExpr;
-				return .Ok;
+				if (_context.ScopeType == .Assignment || _context.ScopeType == .MemberInit)
+				{
+					// TODO: Don't allow this case when we aren't currently in an array scope.
+					ArrayInitExpr arrayInitExpr = null;
+					if (!TryParse!(arrayInitExpr(ref arrayInitExpr)))
+					{
+						rollback.Rollback();
+						return .NotSuitable;
+					}
+	
+					ensureNull!(expr) = arrayInitExpr;
+					return .Ok;
+				}
 			case .QuestionMark:
 				eat!(TokenType.QuestionMark);
 				ensureNull!(expr) = new UninitializedExpr();

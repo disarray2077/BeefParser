@@ -2064,4 +2064,26 @@ public class CodeGenVisitor : ASTVisitor
 		Write!("?");
 		return .Continue;
 	}
+
+	public override VisitResult Visit(BlockExpr node)
+	{
+	    WriteLine!("{");
+	    {
+	    	scope TemporaryChange<int>(ref mIdentation, mIdentation + 1);
+
+			Write!("", true);
+
+	        for (var stmt in node.Statements)
+	            Visit(stmt);
+
+	        if (node.ResultExpr != null)
+	        {
+	            Write!("", true);
+	            Visit(node.ResultExpr);
+	            BreakLine!();
+	        }
+	    }
+	    Write!("}", true);
+	    return .Continue;
+	}
 }
