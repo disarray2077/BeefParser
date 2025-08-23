@@ -1912,6 +1912,25 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 
+	public override VisitResult Visit(TupleTypeSpec tupleTypeSpec)
+	{
+		Write!("(");
+		for (let element in tupleTypeSpec.Elements)
+		{
+			Visit(element.Specification);
+			if (!element.Name.IsEmpty)
+			{
+				Write!(" ");
+				Write!(element.Name);
+			}
+
+			if (@element.Index < tupleTypeSpec.Elements.Count - 1)
+				Write!(", ");
+		}
+		Write!(")");
+		return .Continue;
+	}
+
 	public override VisitResult Visit(ExprModTypeSpec node)
 	{
 		Write!(node.Type == .DeclType ? "decltype(" : "comptype(");
@@ -2085,5 +2104,18 @@ public class CodeGenVisitor : ASTVisitor
 	    }
 	    Write!("}", true);
 	    return .Continue;
+	}
+
+	public override VisitResult Visit(TupleExpr tupleExpr)
+	{
+		Write!("(");
+		for (let element in tupleExpr.Elements)
+		{
+			Visit(element);
+			if (@element.Index < tupleExpr.Elements.Count - 1)
+				Write!(", ");
+		}
+		Write!(")");
+		return .Continue;
 	}
 }

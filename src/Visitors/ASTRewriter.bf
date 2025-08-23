@@ -487,6 +487,13 @@ namespace BeefParser.AST
             return node;
         }
 
+        public override ASTNode Visit(TupleTypeSpec node)
+        {
+			for (var element in node.Elements)
+				element.Specification = (TypeSpec)Visit(element.Specification);
+            return node;
+        }
+
         public override ASTNode Visit(ExprModTypeSpec node)
         {
             node.Expr = (Expression)Visit(node.Expr);
@@ -567,6 +574,12 @@ namespace BeefParser.AST
         {
             VisitList(node.Statements);
             node.ResultExpr = (Expression)Visit(node.ResultExpr);
+            return node;
+        }
+
+        public override ASTNode Visit(TupleExpr node)
+        {
+            VisitList(node.Elements);
             return node;
         }
     }

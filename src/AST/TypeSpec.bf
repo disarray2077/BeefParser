@@ -71,4 +71,22 @@ namespace BeefParser.AST
 		public TokenType Type;
 		public Expression Expr;
 	}
+	
+	[ImplementAccept, ImplementToString]
+	public class TupleTypeSpec : TypeSpec
+	{
+	    public class Element
+	    {
+	        public TypeSpec Specification ~ delete _;
+	        private String mName ~ delete _;
+
+			public StringView Name
+			{
+				get => mName;
+				set => String.NewOrSet!(mName, value);
+			}
+	    }
+
+	    public List<Element> Elements = new .() ~ Release!(_);
+	}
 }

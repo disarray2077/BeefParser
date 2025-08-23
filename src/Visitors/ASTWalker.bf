@@ -445,6 +445,19 @@ namespace BeefParser.AST
             return VisitList(node.Params);
         }
 
+        public override VisitResult Visit(TupleTypeSpec node)
+        {
+			for (let element in node.Elements)
+			{
+				var result = Visit(element.Specification);
+            	if (result != .Continue)
+				{
+					return result;
+				}
+			}
+			return .Continue;
+        }
+
         public override VisitResult Visit(ExprModTypeSpec node)
         {
             return Visit(node.Expr);
@@ -514,6 +527,11 @@ namespace BeefParser.AST
         {
             if (VisitList(node.Statements) == VisitResult.Stop) return VisitResult.Stop;
             return Visit(node.ResultExpr);
+        }
+
+        public override VisitResult Visit(TupleExpr node)
+        {
+            return VisitList(node.Elements);
         }
     }
 }

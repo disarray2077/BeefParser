@@ -408,6 +408,30 @@ namespace BeefParser
 				
 				eat!(TokenType.RParen);
 				return .Ok;
+			case .LParen:
+				eat!(TokenType.LParen);
+
+				if (!TryParse!(checkTypeSpec()))
+					return .NotSuitable;
+
+				if (_currentToken.Type == .Identifier)
+					eat!(TokenType.Identifier);
+
+				if (!tryEat!(TokenType.Comma))
+					return .NotSuitable;
+
+				repeat
+				{
+					if (!TryParse!(checkTypeSpec()))
+					    return .NotSuitable;
+
+					if (_currentToken.Type == .Identifier)
+					    eat!(TokenType.Identifier);
+				}
+				while (tryEat!(TokenType.Comma));
+
+				eat!(TokenType.RParen);
+				return .Ok;
 			case .Void:
 			default:
 			}
@@ -496,6 +520,40 @@ namespace BeefParser
 				Parse!(expression(ref exprModType.Expr));
 				eat!(TokenType.RParen);
 				return .Ok;
+			case .LParen:
+				eat!(TokenType.LParen);
+
+				TypeSpec firstSpec = null;
+				Parse!(typeSpec(ref firstSpec));
+
+				StringView firstName = default;
+				if (tryEat!(TokenType.Identifier))
+				    firstName = _lastToken.AsText();
+
+				if (!tryEat!(TokenType.Comma))
+				{
+					delete firstSpec;
+				    return .NotSuitable;
+				}
+
+			    let tupleType = new TupleTypeSpec();
+			    spec = tupleType;
+
+			    tupleType.Elements.Add(new .() { Specification = firstSpec, Name = firstName });
+
+			    repeat
+			    {
+			        var element = new TupleTypeSpec.Element();
+			        tupleType.Elements.Add(element);
+
+			        Parse!(typeSpec(ref element.Specification));
+
+			        if (tryEat!(TokenType.Identifier))
+			            element.Name = _lastToken.AsText();
+			    }
+				while (tryEat!(TokenType.Comma));
+
+				eat!(TokenType.RParen);
 			case .Void:
 				eat!(_currentToken.Type);
 				spec = new VoidTypeSpec();
@@ -2144,13 +2202,22 @@ namespace BeefParser
 
 				eat!(TokenType.LParen);
 
-				if (expr != null)
-					Debug.Break(); // Shouldn't happen.
+				Runtime.Assert(expr == null);
 
 				if (!TryParse!(expression(ref expr)))
 				{
 					rollback.Rollback();
 					return .NotSuitable;
+				}
+
+				if (tryEat!(TokenType.Comma))
+				{
+				    let tupleExpr = new TupleExpr();
+				    tupleExpr.Elements.Add(expr);
+					expr = tupleExpr;
+
+				    if (_currentToken.Type != .RParen)
+				        Parse!(parseCommaSeparatedExprList(ref tupleExpr.Elements));
 				}
 
 				eat!(TokenType.RParen);

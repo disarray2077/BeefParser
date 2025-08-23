@@ -515,6 +515,12 @@ public abstract class ASTVisitor
 		return .Continue;
 	}
 
+	public virtual VisitResult Visit(TupleTypeSpec node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
 	public virtual VisitResult Visit(ExprModTypeSpec node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
@@ -600,6 +606,12 @@ public abstract class ASTVisitor
 	}
 
 	public virtual VisitResult Visit(BlockExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(TupleExpr node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
@@ -690,6 +702,7 @@ public interface IASTVisitorWithCustomResult
 	public virtual TResult Visit(PointerTypeSpec node) => default;
 	public virtual TResult Visit(RefTypeSpec node) => default;
 	public virtual TResult Visit(DelegateTypeSpec node) => default;
+	public virtual TResult Visit(TupleTypeSpec node) => default;
 	public virtual TResult Visit(ExprModTypeSpec node) => default;
 	public virtual TResult Visit(SimpleName node) => default;
 	public virtual TResult Visit(IdentifierName node) => default;
@@ -705,6 +718,7 @@ public interface IASTVisitorWithCustomResult
 	public virtual TResult Visit(NullCondOpExpr node) => default;
 	public virtual TResult Visit(UninitializedExpr node) => default;
 	public virtual TResult Visit(BlockExpr node) => default;
+	public virtual TResult Visit(TupleExpr node) => default;
 }
 
 public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
@@ -796,6 +810,7 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public virtual TResult Visit(PointerTypeSpec node) => default;
 	public virtual TResult Visit(RefTypeSpec node) => default;
 	public virtual TResult Visit(DelegateTypeSpec node) => default;
+	public virtual TResult Visit(TupleTypeSpec node) => default;
 	public virtual TResult Visit(ExprModTypeSpec node) => default;
 	public virtual TResult Visit(SimpleName node) => default;
 	public virtual TResult Visit(IdentifierName node) => default;
@@ -811,6 +826,7 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public virtual TResult Visit(NullCondOpExpr node) => default;
 	public virtual TResult Visit(UninitializedExpr node) => default;
 	public virtual TResult Visit(BlockExpr node) => default;
+	public virtual TResult Visit(TupleExpr node) => default;
 
 #region Dispatch	
 	public Object IASTVisitorWithCustomResult.Visit(ASTNode node) => ((Self)this).Visit(node);
@@ -894,6 +910,7 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public Object IASTVisitorWithCustomResult.Visit(PointerTypeSpec node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(RefTypeSpec node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(DelegateTypeSpec node) => ((Self)this).Visit(node);
+	public Object IASTVisitorWithCustomResult.Visit(TupleTypeSpec node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(ExprModTypeSpec node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(SimpleName node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(IdentifierName node) => ((Self)this).Visit(node);
@@ -909,5 +926,6 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public Object IASTVisitorWithCustomResult.Visit(NullCondOpExpr node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(UninitializedExpr node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(BlockExpr node) => ((Self)this).Visit(node);
+	public Object IASTVisitorWithCustomResult.Visit(TupleExpr node) => ((Self)this).Visit(node);
 #endregion
 }
