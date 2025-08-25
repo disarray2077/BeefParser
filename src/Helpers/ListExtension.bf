@@ -86,7 +86,7 @@ namespace BeefParser.AST
 			{
 				code.Append(part);
 				
-				if (@part != parts.Count - 1)
+				if (@part != parts.Count - 1 && args[@part] != null)
 					codeGen.Visit((ASTNode)args[@part]);
 			}
 
