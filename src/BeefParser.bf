@@ -3367,7 +3367,7 @@ namespace BeefParser
 			return .NotSuitable;
 		}
 
-		private ParseResult<void> ifStmt(ref Statement stmt)
+		private ParseResult<void> ifStmt(ref Statement stmt, bool needSemi)
 		{
 			if (tryEat!(TokenType.If))
 			{
@@ -3380,10 +3380,10 @@ namespace BeefParser
 
 				eat!(TokenType.RParen);
 
-				Parse!(statement(ref ifStmt.ThenStatement, true));
+				Parse!(statement(ref ifStmt.ThenStatement, needSemi));
 
 				if (tryEat!(TokenType.Else))
-					Parse!(statement(ref ifStmt.ElseStatement, true));
+					Parse!(statement(ref ifStmt.ElseStatement, needSemi));
 
 				return .Ok;
 			}
@@ -3658,7 +3658,7 @@ namespace BeefParser
 			TryParseReturn!(whileStmt(ref stmt));
 			TryParseReturn!(repeatStmt(ref stmt));
 			TryParseReturn!(doStmt(ref stmt));
-			TryParseReturn!(ifStmt(ref stmt));
+			TryParseReturn!(ifStmt(ref stmt, needSemi));
 			TryParseReturn!(deferStmt(ref stmt));
 			TryParseReturn!(usingStmt(ref stmt));
 			TryParseReturn!(switchStmt(ref stmt));
