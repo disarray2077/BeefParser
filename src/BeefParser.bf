@@ -318,7 +318,7 @@ namespace BeefParser
 		    if (!isReservedType(_currentToken.Type) && _currentToken.Type != TokenType.Identifier)
 		        return .NotSuitable;
 
-		    Try!(parseSimpleName(ref name));
+		    TryParse!(parseSimpleName(ref name));
 
 		    while (tryEat!(TokenType.Dot))
 		    {
@@ -327,7 +327,7 @@ namespace BeefParser
 		            Left = name,
 		        };
 		        name = qualifiedName;
-				Try!(parseSimpleName(ref qualifiedName.Right));
+				TryParse!(parseSimpleName(ref qualifiedName.Right));
 		    }
 
 		    return .Ok;
@@ -829,6 +829,31 @@ namespace BeefParser
 			return result;
 		}
 
+		private ParseResult<void> parseOperatorToken(out TokenType token)
+		{
+			token = _currentToken.Type;
+			switch (token)
+			{
+			case .Plus, .Minus, .Mul, .Div, .Module, .Not, .Tilde, .Increment, .Decrement,
+				.Equal, .StrictEqual, .NotEqual, .LArrow, .LesserEq, .GreaterEq, .Spaceship,
+				.BitwiseAnd, .BitwiseOr, .BitwiseXor, .And, .Or, .LShift, .NullCoarl,
+				.QuestionMark, .DotDotDot, .UpToRange, .AddAssign, .SubAssign, .MulAssign,
+				.DivAssign, .ModAssign, .LShiftAssign, .RShiftAssign, .BitAndAssign, .BitOrAssign, .BitXorAssign:
+				break;
+			case .RArrow:
+				if (_nextToken.Type == .RArrow && _nextToken.Position == _currentToken.Position + 1)
+				{
+					eat!(TokenType.RArrow);
+					token = .RShift;
+				}
+			default:
+				return .NotSuitable;
+			}
+
+			eat!(_currentToken.Type);
+			return .Ok;
+		}
+
 		private ParseResult<void> parseInheritance(ref List<TypeSpec> specs)
 		{
 			repeat
@@ -946,52 +971,32 @@ namespace BeefParser
 				TryParse!(parseGenericConstraints(ref typeDecl.GenericConstraints));
 
 				scope TemporaryChange<BaseTypeDecl>(ref _context.Type, decl);
-	
-				eat!(TokenType.LCurly);
-				Try!(declarations(ref typeDecl.Declarations));
-				eat!(TokenType.RCurly);
-				return .Ok;
-			}
-			else if (var enumDecl = decl as EnumDecl)
-			{
-				scope TemporaryChange<BaseTypeDecl>(ref _context.Type, decl);
-
-				if (tryEat!(TokenType.Colon))
-				{
-					// We do this to make sure even the errored TypeSpec gets deleted with the parent node.
-					TypeSpec* underlyingType = enumDecl.Inheritance.GrowUninitialized(1);
-					*underlyingType = null;
-					Parse!(typeSpec(ref *underlyingType));
-				}
-
 				eat!(TokenType.LCurly);
 
-				if (_currentToken.Type == .Case)
-				{
-					Try!(declarations(ref enumDecl.Declarations));
-				}
-				else
+				if (let enumDecl = decl as EnumDecl && _currentToken.Type == .Identifier &&
+					(_nextToken.Type == .Assign || _nextToken.Type == .Comma || _nextToken.Type == .RCurly))
 				{
 					repeat
 					{
-						if(!tryEat!(TokenType.Identifier))
+						if (!tryEat!(TokenType.Identifier))
 							break;
 						
 						// TODO: Attributes support
 						var key = _lastToken.AsText();
-	
+
 						if (enumDecl.SimpleDeclarations.ContainsKeyAlt(key))
 							raiseErrorF!(_lastToken.Position, "A field named '{}' has already been declared.", key);
-	
+
 						enumDecl.SimpleDeclarations.TryAddAlt(key, let keyPtr, let exprPtr);
 						*keyPtr = new String(key);
 						*exprPtr = null;
-	
+
 						if (tryEat!(TokenType.Assign))
 							Parse!(expression(ref *exprPtr));
 					} while (tryEat!(TokenType.Comma));
 				}
-
+				else
+					Try!(declarations(ref typeDecl.Declarations));
 				eat!(TokenType.RCurly);
 				return .Ok;
 			}
@@ -1033,10 +1038,12 @@ namespace BeefParser
 				paramDecl.IsOut = true;
 			else if (tryEat!(TokenType.Ref))
 				paramDecl.IsRef = true;
+			else if (tryEat!(TokenType.Params))
+				paramDecl.IsParams = true;
 
 			Parse!(typeSpec(ref paramDecl.Specification));
 
-			if (tryEat!(TokenType.Identifier))
+			if (tryEat!(isReservedType(_currentToken.Type) ? _currentToken.Type : TokenType.Identifier))
 				paramDecl.Name = _lastToken.AsText();
 
 			if (tryEat!(TokenType.Assign))
@@ -1205,6 +1212,7 @@ namespace BeefParser
 						};
 						accessors.Add(accessor);
 
+						accessor.IsMutable = tryEat!(TokenType.Mut);
 						if (tryEat!(TokenType.Bind))
 						{
 							Parse!(expression(ref accessor.Expr));
@@ -1228,6 +1236,8 @@ namespace BeefParser
 						};
 						accessors.Add(accessor);
 
+						accessor.IsRef = tryEat!(TokenType.Ref);
+						accessor.IsMutable = tryEat!(TokenType.Mut);
 						if (tryEat!(TokenType.Bind))
 						{
 							Parse!(expression(ref accessor.Expr));
@@ -1618,6 +1628,7 @@ namespace BeefParser
 			bool isConstructor = false;
 			bool isDestructor = false;
 			bool isOperator = false;
+			TokenType? operatorToken = null;
 			TypeSpec typeSpec = null;
 
 			if (_currentToken.Type == TokenType.Tilde && _nextToken.Type == TokenType.Identifier)
@@ -1656,7 +1667,6 @@ namespace BeefParser
 				}
 				else if (tryEat!(TokenType.Operator))
 				{
-					opType = .Implicit; // Default value?
 					isOperator = true;
 				}
 
@@ -1669,6 +1679,14 @@ namespace BeefParser
 				{
 					if (!rollback.Cancelled)
 						delete typeSpec;
+				}
+
+				if (!isOperator && tryEat!(TokenType.Operator))
+				{
+					isOperator = true;
+					TokenType token;
+					Parse!(parseOperatorToken(out token));
+					operatorToken = token;
 				}
 			}
 
@@ -1697,6 +1715,7 @@ namespace BeefParser
 					IsConstructor = isConstructor,
 					IsDestructor = isDestructor,
 					IsOperator = isOperator,
+					OperatorToken = operatorToken,
 					OperatorType = opType
 				};
 				declaration = decl;
@@ -1755,7 +1774,20 @@ namespace BeefParser
 
 				scope TemporaryChange<MethodDecl>(ref _context.Method, decl);
 
-				bool hasBody = TryParse!(compoundStatement(ref decl.CompoundStmt));
+				Statement block = null;
+				let blockResult = compoundStatement(ref block);
+				decl.Body = block;
+				bool hasBody = TryParse!(blockResult);
+				if (!hasBody && tryEat!(TokenType.Bind))
+				{
+					Expression bodyExpr = null;
+					let expressionResult = expression(ref bodyExpr);
+					decl.Body = bodyExpr;
+					Parse!(expressionResult);
+					eat!(TokenType.Semi);
+					hasBody = true;
+				}
+
 				if (!hasBody)
 				{
 					if (isLocal)
@@ -1919,7 +1951,7 @@ namespace BeefParser
 				return .Ok;
 			case .CharLiteral:
 				eat!(_currentToken.Type);
-				ensureNull!(expr) = new CharLiteral(_lastToken.AsText().DecodedChars.GetNext());
+				ensureNull!(expr) = new CharLiteral(_lastToken.AsChar());
 				return .Ok;
 			default:
 				return .NotSuitable;
@@ -2533,6 +2565,15 @@ namespace BeefParser
 				else
 				{
 					Parse!(typeSpec(ref typeSpec));
+					bool isRawAllocation = false;
+					if (let pointerType = typeSpec as PointerTypeSpec && pointerType.Element is ArrayTypeSpec)
+					{
+						// A trailing '*' selects raw array allocation; it is separate from the array type.
+						typeSpec = pointerType.Element;
+						pointerType.Element = null;
+						delete pointerType;
+						isRawAllocation = true;
+					}
 
 					if (expr != null)
 					{
@@ -2546,7 +2587,8 @@ namespace BeefParser
 							IsScope = isScope,
 							IsAppend = isAppend,
 							Bind = bind,
-							TypeSpec = arrayType
+							TypeSpec = arrayType,
+							IsRawAllocation = isRawAllocation
 						};
 						expr = newOpExpr;
 	
@@ -2591,6 +2633,8 @@ namespace BeefParser
 				ensureNull!(expr);
 				let deleteOpExpr = new DeleteOpExpr();
 				expr = deleteOpExpr;
+				if (tryEat!(TokenType.Colon))
+					Parse!(postFixExpr(ref deleteOpExpr.Target));
 
 				Parse!(expression(ref deleteOpExpr.Expr));
 				return .Ok;
@@ -2632,6 +2676,15 @@ namespace BeefParser
 					Parse!(typeSpec(ref defaultOpExpr.TypeSpec));
 					eat!(TokenType.RParen);
 				}
+			}
+			else if (tryEat!(TokenType.Params))
+			{
+				ensureNull!(expr);
+				let paramsExpr = new ParamsExpr();
+				expr = paramsExpr;
+
+				Parse!(unaryExpr(ref paramsExpr.Expr));
+				return .Ok;
 			}
 			else if (tryEat!(TokenType.Out))
 			{
@@ -3181,7 +3234,7 @@ namespace BeefParser
 					if (!TryParse!(variableDecl(ref declaration)))
 					{
 						let tokenIndexBkp = _tokenIndex;
-						if (TryParse!(checkTypeSpec()))
+						if (TryParse!(checkTypeSpec()) && _currentToken.Type == .Identifier)
 						{
 							eat!(TokenType.Identifier);
 
@@ -3256,19 +3309,44 @@ namespace BeefParser
 
 							return .Ok;
 						}
+						else
+						{
+							_tokenIndex = tokenIndexBkp;
+						}
 
 						forStmt = new ForStmt();
 						stmt = forStmt;
 
 						forStmt.Initializers = new .();
 
-						repeat
+						// We do this to make sure even the errored Expression gets deleted with the parent node.
+						Expression* initExpr = forStmt.Initializers.GrowUninitialized(1);
+						*initExpr = null;
+						Parse!(expression(ref *initExpr));
+
+						if (tryEat!(TokenType.RParen))
+						{
+							let sourceExpr = forStmt.Initializers[0];
+							forStmt.Initializers[0] = null;
+
+							delete forStmt;
+							let foreachStmt = new ForeachStmt()
+							{
+								IsAnonymous = true,
+								SourceExpr = sourceExpr
+							};
+							stmt = foreachStmt;
+							Parse!(statement(ref foreachStmt.Body, true));
+							return .Ok;
+						}
+
+						while (tryEat!(TokenType.Comma))
 						{
 							// We do this to make sure even the errored Expression gets deleted with the parent node.
-							Expression* initExpr = forStmt.Initializers.GrowUninitialized(1);
+							initExpr = forStmt.Initializers.GrowUninitialized(1);
 							*initExpr = null;
 							Parse!(expression(ref *initExpr));
-						} while (tryEat!(TokenType.Comma));
+						}
 					}
 					else
 					{

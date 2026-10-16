@@ -10,6 +10,7 @@ namespace BeefParser.AST
 		public bool IsIn;
 		public bool IsOut;
 		public bool IsRef;
+		public bool IsParams;
 		public TypeSpec Specification ~ delete _;
 		public String mName ~ delete _;
 		public Expression Default ~ delete _;

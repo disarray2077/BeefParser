@@ -7,8 +7,9 @@ namespace BeefParser.AST
 	{
 		public bool IsAppend;
 		public bool IsScope;
+		public bool IsRawAllocation; // The trailing '*' in new T[count]*
 		public BindType Bind ~ if (Bind case .Custom(let bindExpr)) delete bindExpr;
-		public ArrayTypeSpec TypeSpec ~ delete _; // TypeSpec can be null when it's an implictly-typed array.
+		public ArrayTypeSpec TypeSpec ~ delete _;
 		public ArrayInitExpr Initializer ~ delete _;
 	}
 }

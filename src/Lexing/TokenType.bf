@@ -89,6 +89,7 @@ namespace BeefParser
 		In,
 		Out,
 		Ref,
+		Params,
 		Var,
 		Let,
 
@@ -178,7 +179,7 @@ namespace BeefParser
 		BitwiseAnd, // &
 		BitwiseXor, // ^
 		LShift, 	// <<
-		//RShift, 	// >>
+		RShift, 	// >> (the lexer emits separate '>' tokens for generic type parsing)
 		NullCoarl, 	// ??
 		NullCond,	// ?.
 		Or, 		// ||

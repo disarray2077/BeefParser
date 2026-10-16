@@ -207,7 +207,10 @@ public class CodeGenVisitor : ASTVisitor
 		}
 		Write!(propertyDecl.Name);
 
-		if (propertyDecl.Accessors.Count == 1 && propertyDecl.Accessors[0].AccessorType == .Get && propertyDecl.Accessors[0].Expr != null)
+		if (propertyDecl.Accessors.Count == 1 &&
+			propertyDecl.Accessors[0].AccessorType == .Get &&
+			!propertyDecl.Accessors[0].IsRef && !propertyDecl.Accessors[0].IsMutable &&
+			propertyDecl.Accessors[0].Expr != null)
 		{
 			Write!(" => ");
 			Visit(propertyDecl.Accessors[0].Expr);
@@ -238,11 +241,15 @@ public class CodeGenVisitor : ASTVisitor
 					case .Get: Write!("get");
 					case .Set: Write!("set");
 					}
+					if (accessor.IsRef)
+						Write!(" ref");
+					if (accessor.IsMutable)
+						Write!(" mut");
 
 					if (accessor.Expr != null)
 					{
 						Write!(" => ");
-						Visit(propertyDecl.Accessors[0].Expr);
+						Visit(accessor.Expr);
 						Write!(";");
 					}
 					else if (accessor.Statement != null)
@@ -320,11 +327,15 @@ public class CodeGenVisitor : ASTVisitor
 			case .Get: Write!("get");
 			case .Set: Write!("set");
 			}
+			if (accessor.IsRef)
+				Write!(" ref");
+			if (accessor.IsMutable)
+				Write!(" mut");
 
 			if (accessor.Expr != null)
 			{
 				Write!(" => ");
-				Visit(indexerDecl.Accessors[0].Expr);
+				Visit(accessor.Expr);
 				Write!(";");
 			}
 			else if (accessor.Statement != null)
@@ -494,6 +505,18 @@ public class CodeGenVisitor : ASTVisitor
 		Write!("enum ");
 		Write!(enumDecl.Name);
 
+		if (!enumDecl.GenericParametersNames.IsEmpty)
+		{
+			Write!("<");
+			for (var param in enumDecl.GenericParametersNames)
+			{
+				Write!(param);
+				if (@param.Index != enumDecl.GenericParametersNames.Count - 1)
+					Write!(", ");
+			}
+			Write!(">");
+		}
+
 		if (!enumDecl.Inheritance.IsEmpty)
 		{
 			Write!(" : ");
@@ -503,6 +526,36 @@ public class CodeGenVisitor : ASTVisitor
 				Write!(inh.ToString(.. scope .()));
 				if (@inh.Index != enumDecl.Inheritance.Count - 1)
 					Write!(", ");
+			}
+		}
+
+		if (!enumDecl.GenericConstraints.IsEmpty)
+		{
+			scope TemporaryChange<int>(ref mIdentation, mIdentation + 1);
+			for (let constraintDecl in enumDecl.GenericConstraints)
+			{
+				BreakLine!();
+				Write!("where ", true);
+				Write!(constraintDecl.Target);
+				Write!(" : ");
+				for (let constraint in constraintDecl.Constraints)
+				{
+					if (let typeConstraint = constraint as TypeConstraint)
+						Visit(typeConstraint.TypeSpec);
+					else if (let binaryConstraint = constraint as TypeBinaryOpConstraint)
+					{
+						Write!("operator ");
+						Visit(binaryConstraint.Left);
+						Write!(" ");
+						Write!(GetOperatorSymbol(binaryConstraint.Operation));
+						Write!(" ");
+						Visit(binaryConstraint.Right);
+					}
+					else
+						Write!(constraint.Text);
+					if (@constraint.Index != constraintDecl.Constraints.Count - 1)
+						Write!(", ");
+				}
 			}
 		}
 
@@ -525,7 +578,7 @@ public class CodeGenVisitor : ASTVisitor
 						Visit(decl.value);
 					}
 	
-					if (++i != enumDecl.Declarations.Count)
+					if (++i != enumDecl.SimpleDeclarations.Count)
 					{
 						Write!(",");
 						BreakLine!();
@@ -546,6 +599,36 @@ public class CodeGenVisitor : ASTVisitor
 
 		BreakLine!();
 		WriteLine!("}", true);
+		return .Continue;
+	}
+
+	public override VisitResult Visit(EnumCaseDecl enumCaseDecl)
+	{
+		Write!("case ", true);
+		for (let item in enumCaseDecl.Items)
+		{
+			Visit(item);
+			if (@item.Index != enumCaseDecl.Items.Count - 1)
+				Write!(", ");
+		}
+		WriteLine!(";");
+		return .Continue;
+	}
+
+	public override VisitResult Visit(EnumCaseItem item)
+	{
+		Write!(item.Name);
+		if (!item.Parameters.IsEmpty)
+		{
+			Write!("(");
+			for (let param in item.Parameters)
+			{
+				WriteParamDecl(param);
+				if (@param.Index != item.Parameters.Count - 1)
+					Write!(", ");
+			}
+			Write!(")");
+		}
 		return .Continue;
 	}
 
@@ -667,6 +750,8 @@ public class CodeGenVisitor : ASTVisitor
 			Write!("out ");
 		else if (paramDecl.IsRef)
 			Write!("ref ");
+		else if (paramDecl.IsParams)
+			Write!("params ");
 		Write!(paramDecl.Specification);
 
 		if (!paramDecl.Name.IsEmpty)
@@ -822,6 +907,53 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 	
+	private StringView GetOperatorSymbol(TokenType token)
+	{
+		switch (token)
+		{
+		case .Plus: return "+";
+		case .Minus: return "-";
+		case .Mul: return "*";
+		case .Div: return "/";
+		case .Module: return "%";
+		case .Not: return "!";
+		case .Tilde: return "~";
+		case .Increment: return "++";
+		case .Decrement: return "--";
+		case .Equal: return "==";
+		case .StrictEqual: return "===";
+		case .NotEqual: return "!=";
+		case .LArrow: return "<";
+		case .RArrow: return ">";
+		case .LesserEq: return "<=";
+		case .GreaterEq: return ">=";
+		case .Spaceship: return "<=>";
+		case .BitwiseAnd: return "&";
+		case .BitwiseOr: return "|";
+		case .BitwiseXor: return "^";
+		case .And: return "&&";
+		case .Or: return "||";
+		case .LShift: return "<<";
+		case .RShift: return ">>";
+		case .NullCoarl: return "??";
+		case .QuestionMark: return "?";
+		case .DotDotDot: return "...";
+		case .UpToRange: return "..<";
+		case .AddAssign: return "+=";
+		case .SubAssign: return "-=";
+		case .MulAssign: return "*=";
+		case .DivAssign: return "/=";
+		case .ModAssign: return "%=";
+		case .LShiftAssign: return "<<=";
+		case .RShiftAssign: return ">>=";
+		case .BitAndAssign: return "&=";
+		case .BitOrAssign: return "|=";
+		case .BitXorAssign: return "^=";
+		default:
+			Runtime.FatalError("Invalid operator token");
+		}
+	}
+
 	public override VisitResult Visit(MethodDecl methodDecl)
 	{
 		if (!methodDecl.Attributes.IsEmpty)
@@ -839,18 +971,29 @@ public class CodeGenVisitor : ASTVisitor
 
 		WriteAccessLevel(methodDecl.AccessLevel);
 		WriteModifiers(methodDecl.Modifiers);
+		bool isConversionOperator = methodDecl.IsOperator && !methodDecl.OperatorToken.HasValue;
 
-		if (methodDecl.IsOperator)
+		if (isConversionOperator)
 		{
-			Write!(EnumToLowerString!(methodDecl.OperatorType));
-			Write!(" operator ");
+			if (methodDecl.OperatorType != .None)
+			{
+				Write!(EnumToLowerString!(methodDecl.OperatorType));
+				Write!(" ");
+			}
+			Write!("operator ");
+			Write!(methodDecl.Specification);
 		}
 
-		if (!methodDecl.IsConstructor && !methodDecl.IsDestructor)
+		if (!methodDecl.IsConstructor && !methodDecl.IsDestructor && !isConversionOperator)
 		{
 			Write!(methodDecl.Specification);
-			if (!methodDecl.IsOperator)
-				Write!(" ");
+			Write!(" ");
+		}
+
+		if (methodDecl.IsOperator && !isConversionOperator)
+		{
+			Write!("operator");
+			Write!(GetOperatorSymbol(methodDecl.OperatorToken.Value));
 		}
 
 		if (!methodDecl.IsOperator)
@@ -907,7 +1050,9 @@ public class CodeGenVisitor : ASTVisitor
 		}
 		else
 		{
-			BreakLine!();
+			let bodyExpr = methodDecl.Body as Expression;
+			if (bodyExpr == null || !methodDecl.GenericConstraints.IsEmpty)
+				BreakLine!();
 
 			if (!methodDecl.GenericConstraints.IsEmpty)
 			{
@@ -940,7 +1085,17 @@ public class CodeGenVisitor : ASTVisitor
 			}
 			
 			scope TemporaryChange<MethodDecl>(ref mCurMethod, methodDecl);
-			Visit(methodDecl.CompoundStmt);
+			if (bodyExpr != null)
+			{
+				if (methodDecl.GenericConstraints.IsEmpty)
+					Write!(" => ");
+				else
+					Write!("=> ", true);
+				Visit(bodyExpr);
+				WriteLine!(";");
+			}
+			else
+				Visit(methodDecl.Body);
 		}
 
 		return .Continue;
@@ -1187,10 +1342,13 @@ public class CodeGenVisitor : ASTVisitor
 	public override VisitResult Visit(ForeachStmt foreachStmt)
 	{
 		Write!("for (", true);
-		Visit(foreachStmt.TargetType);
-		Write!(" ");
-		Write!(foreachStmt.TargetName);
-		Write!(" in ");
+		if (!foreachStmt.IsAnonymous)
+		{
+			Visit(foreachStmt.TargetType);
+			Write!(" ");
+			Write!(foreachStmt.TargetName);
+			Write!(" in ");
+		}
 		Visit(foreachStmt.SourceExpr);
 		Write!(")");
 		BreakLine!();
@@ -1555,11 +1713,34 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 
+	private void WriteAllocationPrefix(bool isScope, bool isAppend, BindType bind)
+	{
+		if (isScope) Write!("scope");
+		else if (isAppend) Write!("append");
+		else Write!("new");
+
+		switch (bind)
+		{
+		case .Undefined:
+			break;
+		case .RootScope: Write!("::");
+		case .Mixin: Write!(":mixin");
+		case .Custom(let bindExpr):
+			Write!(":");
+			bool needsParens = !(bindExpr is IdentifierExpr);
+			if (needsParens) Write!("(");
+			Visit(bindExpr);
+			if (needsParens) Write!(")");
+		}
+	}
+
 	public override VisitResult Visit(NewOpExpr newOpExpr)
 	{
-		if (newOpExpr.IsScope) Write!("scope ");
-		else if (newOpExpr.IsAppend) Write!("append ");
-		else if (!newOpExpr.IsInplace) Write!("new ");
+		if (newOpExpr.IsScope || newOpExpr.IsAppend || !newOpExpr.IsInplace)
+		{
+			WriteAllocationPrefix(newOpExpr.IsScope, newOpExpr.IsAppend, newOpExpr.Bind);
+			Write!(" ");
+		}
 
 		Write!(newOpExpr.TypeSpec.ToString(.. scope .()));
 		Write!("(");
@@ -1584,10 +1765,11 @@ public class CodeGenVisitor : ASTVisitor
 
 	public override VisitResult Visit(NewArrayOpExpr newArrayOpExpr)
 	{
-		if (newArrayOpExpr.IsScope) Write!("scope ");
-		else if (newArrayOpExpr.IsAppend) Write!("append ");
-		else Write!("new ");
+		WriteAllocationPrefix(newArrayOpExpr.IsScope, newArrayOpExpr.IsAppend, newArrayOpExpr.Bind);
+		Write!(" ");
 		Visit(newArrayOpExpr.TypeSpec);
+		if (newArrayOpExpr.IsRawAllocation)
+			Write!("*");
 
 		if (newArrayOpExpr.Initializer != null)
 		{
@@ -1600,9 +1782,7 @@ public class CodeGenVisitor : ASTVisitor
 
 	public override VisitResult Visit(NewArrayImplicitOpExpr newArrayImplicitOpExpr)
 	{
-		if (newArrayImplicitOpExpr.IsScope) Write!("scope");
-		else if (newArrayImplicitOpExpr.IsAppend) Write!("append");
-		else Write!("new");
+		WriteAllocationPrefix(newArrayImplicitOpExpr.IsScope, newArrayImplicitOpExpr.IsAppend, newArrayImplicitOpExpr.Bind);
 
 		Write!("[");
 		for (int i < newArrayImplicitOpExpr.CommaCount)
@@ -1708,6 +1888,13 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 	
+	public override VisitResult Visit(ParamsExpr paramsExpr)
+	{
+		Write!("params ");
+		Visit(paramsExpr.Expr);
+		return .Continue;
+	}
+
 	public override VisitResult Visit(OutExpr outExpr)
 	{
 		Write!("out ");
@@ -1989,18 +2176,16 @@ public class CodeGenVisitor : ASTVisitor
 
 	public override VisitResult Visit(NewInterpolatedStringOpExpr node)
 	{
-		if (node.IsScope) Write!("scope ");
-		else if (node.IsAppend) Write!("append ");
-		else Write!("new ");
+		WriteAllocationPrefix(node.IsScope, node.IsAppend, node.Bind);
+		Write!(" ");
 		Visit(node.Expr);
 		return .Continue;
 	}
 
 	public override VisitResult Visit(NewLambdaOpExpr node)
 	{
-		if (node.IsScope) Write!("scope ");
-		else if (node.IsAppend) Write!("append ");
-		else Write!("new ");
+		WriteAllocationPrefix(node.IsScope, node.IsAppend, node.Bind);
+		Write!(" ");
 		Visit(node.Expr);
 		return .Continue;
 	}
@@ -2051,7 +2236,16 @@ public class CodeGenVisitor : ASTVisitor
 
 	public override VisitResult Visit(DeleteOpExpr node)
 	{
-		Write!("delete ");
+		Write!("delete");
+		if (node.Target != null)
+		{
+			Write!(":");
+			bool needsParens = !(node.Target is IdentifierExpr);
+			if (needsParens) Write!("(");
+			Visit(node.Target);
+			if (needsParens) Write!(")");
+		}
+		Write!(" ");
 		Visit(node.Expr);
 		return .Continue;
 	}

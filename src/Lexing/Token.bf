@@ -50,6 +50,31 @@ namespace BeefParser
 		    	return (.)uint64.Parse(value);
 		}
 
+		public char32 AsChar()
+		{
+			if (_value[0] != '\\')
+				return _value.DecodedChars.GetNext();
+
+			switch (_value[1])
+			{
+			case '0': return '\0';
+			case 'a': return '\a';
+			case 'b': return '\b';
+			case 'f': return '\f';
+			case 'n': return '\n';
+			case 'r': return '\r';
+			case 't': return '\t';
+			case 'v': return '\v';
+			case '\\', '"', '\'': return _value[1];
+			case 'x', 'u':
+				let digits = _value[1] == 'x' ? _value.Substring(2) : _value.Substring(3, _value.Length - 4);
+				uint32 value = uint32.Parse(digits, .Hex);
+				return (char32)value;
+			default:
+				Runtime.FatalError("Invalid character literal");
+			}
+		}
+
 		public double AsReal()
 		{
 		    return double.Parse(_value);

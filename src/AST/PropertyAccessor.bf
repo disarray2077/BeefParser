@@ -15,6 +15,8 @@ namespace BeefParser.AST
 		public List<AttributeSpec> Attributes ~ Release!(_);
 		public AccessLevel AccessLevel;
 		public AccessorType AccessorType;
+		public bool IsRef;
+		public bool IsMutable;
 		public Statement Statement ~ delete _;
 		public Expression Expr ~ delete _;
 	

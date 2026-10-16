@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Text;
 
 namespace BeefParser
 {
@@ -87,6 +88,13 @@ namespace BeefParser
 	            return '\0';
 	        return _text[peek_pos];
 	    }
+
+		private bool isHexDigit(char8 c)
+		{
+			return (c >= '0' && c <= '9') ||
+				(c >= 'a' && c <= 'f') ||
+				(c >= 'A' && c <= 'F');
+		}
 
 		private bool match(char8 c)
 		{
@@ -324,44 +332,85 @@ namespace BeefParser
 
 		private Result<Token, char8> chr()
 		{
-		    advance();
-		    var startPos = _pos;
+			advance();
+			let startPos = _pos;
+			if (_currentChar == '\0' || _currentChar == '\n' || _currentChar == '\r' || _currentChar == '\'')
+				return .Err(_currentChar);
 
-		    while (true)
-		    {
-				if (_currentChar == '\0' || _currentChar == '\n')
-					return .Err(_currentChar);
-
-		        if (_currentChar == '\'')
-		        {
-					advance();
-					break;
-				}
-
-				if ((_pos - 1) - startPos > 1)
-					return .Err(_currentChar);
-
-				if (_currentChar == '\\')
+			if (_currentChar == '\\')
+			{
+				advance();
+				switch (_currentChar)
 				{
-					switch (peek())
+				case '0', 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', '"', '\'':
+					advance();
+				case 'x':
+					advance();
+					for (int i = 0; i < 2; i++)
 					{
-					case '\'', '\\':
+						if (!isHexDigit(_currentChar))
+							return .Err(_currentChar);
+						advance();
+					}
+				case 'u':
+					advance();
+					if (_currentChar != '{')
+						return .Err(_currentChar);
+					advance();
+
+					int hexDigits = 0;
+					while (_currentChar != '}')
+					{
+						if (_currentChar == '\0' || _currentChar == '\n' || !isHexDigit(_currentChar))
+							return .Err(_currentChar);
+
+						hexDigits++;
+						if (hexDigits > 8)
+							return .Err(_currentChar);
 						advance();
 					}
 
-					// TODO: Parse \1, \x03, etc
+					if (hexDigits == 0)
+						return .Err(_currentChar);
+					StringView digits = .(_text, startPos + 3, hexDigits);
+					uint32 value = uint32.Parse(digits, .Hex);
+					if (value > 0x10FFFF || (value >= 0xD800 && value <= 0xDFFF))
+						return .Err(_currentChar);
+					advance();
+				default:
+					return .Err(_currentChar);
 				}
+			}
+			else if ((uint8)_currentChar >= 0x80)
+			{
+				int length = UTF8.GetDecodedLength(_currentChar);
+				if (length < 2 || length > 4 || _pos + length > _text.Length)
+					return .Err(_currentChar);
+				if (UTF8.TryDecode(_text.Ptr + _pos, length) case .Ok(let decoded))
+				{
+					let value = decoded.0;
+					if (value > (char32)0x10FFFF || (value >= (char32)0xD800 && value <= (char32)0xDFFF) ||
+						UTF8.GetEncodedLength(value) != length)
+						return .Err(_currentChar);
+				}
+				else
+					return .Err(_currentChar);
+				for (int i = 0; i < length; i++)
+					advance();
+			}
+			else
+			{
+				advance();
+			}
 
-		        advance();
-		    }
+			if (_currentChar != '\'')
+				return .Err(_currentChar);
 
-			int length = (_pos - 1) - startPos;
+			int length = _pos - startPos;
 			StringView result = .(_text, startPos, length);
 
-			if (result.IsEmpty)
-				return .Err('\'');
-
-		    return .Ok(.(TokenType.CharLiteral, startPos, result));
+			advance();
+			return .Ok(.(TokenType.CharLiteral, startPos, result));
 		}
 
 	    /// <summary>

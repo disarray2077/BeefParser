@@ -12,7 +12,7 @@ namespace BeefParser.AST
 	[ImplementAccept, ImplementToString]
 	public class EnumCaseItem : ASTNode
 	{
-	    private String mName;
+	    private String mName ~ delete _;
 	    public List<ParamDecl> Parameters = new .() ~ Release!(_);
 
 		public StringView Name

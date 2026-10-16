@@ -22,10 +22,10 @@ namespace BeefParser.AST
             }
         }
 
-        public void VisitDictionary<T>(Dictionary<StringView, T> dict) where T : ASTNode
+        public void VisitDictionary<T>(Dictionary<String, T> dict) where T : ASTNode
         {
             if (dict == null) return;
-			let copy = scope List<(StringView key, T value)>(dict.GetEnumerator());
+			let copy = scope List<(String key, T value)>(dict.GetEnumerator());
             for (let (key, value) in copy)
             {
                 var newNode = (T)Visit(value);
@@ -127,7 +127,7 @@ namespace BeefParser.AST
         {
             methodDecl.Specification = (TypeSpec)Visit(methodDecl.Specification);
             VisitList(methodDecl.FormalParameters);
-            methodDecl.CompoundStmt = (CompoundStmt)Visit(methodDecl.CompoundStmt);
+            methodDecl.Body = Visit(methodDecl.Body);
             return methodDecl;
         }
 
@@ -394,6 +394,12 @@ namespace BeefParser.AST
             return refExpr;
         }
 
+        public override ASTNode Visit(ParamsExpr paramsExpr)
+        {
+            paramsExpr.Expr = (Expression)Visit(paramsExpr.Expr);
+            return paramsExpr;
+        }
+
         public override ASTNode Visit(OutExpr outExpr)
         {
             outExpr.Expr = (Expression)Visit(outExpr.Expr);
@@ -555,6 +561,7 @@ namespace BeefParser.AST
 
         public override ASTNode Visit(DeleteOpExpr node)
         {
+            node.Target = (Expression)Visit(node.Target);
             node.Expr = (Expression)Visit(node.Expr);
             return node;
         }

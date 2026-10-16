@@ -185,6 +185,18 @@ public abstract class ASTVisitor
 		return .Continue;
 	}
 
+	public virtual VisitResult Visit(EnumCaseDecl node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(EnumCaseItem node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
 	public virtual VisitResult Visit(TypeAliasDecl node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
@@ -414,6 +426,12 @@ public abstract class ASTVisitor
 	}
 
 	public virtual VisitResult Visit(OutExpr node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
+	public virtual VisitResult Visit(ParamsExpr node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
 		return .Continue;
@@ -654,6 +672,8 @@ public interface IASTVisitorWithCustomResult
 	public virtual TResult Visit(ExpressionStmt node) => default;
 	public virtual TResult Visit(UsingDirective node) => default;
 	public virtual TResult Visit(EnumDecl node) => default;
+	public virtual TResult Visit(EnumCaseDecl node) => default;
+	public virtual TResult Visit(EnumCaseItem node) => default;
 	public virtual TResult Visit(TypeAliasDecl node) => default;
 	public virtual TResult Visit(FieldDecl node) => default;
 	public virtual TResult Visit(PropertyDecl node) => default;
@@ -692,6 +712,7 @@ public interface IASTVisitorWithCustomResult
 	public virtual TResult Visit(CastExpr node) => default;
 	public virtual TResult Visit(RefExpr node) => default;
 	public virtual TResult Visit(OutExpr node) => default;
+	public virtual TResult Visit(ParamsExpr node) => default;
 	public virtual TResult Visit(VarExpr node) => default;
 	public virtual TResult Visit(LetExpr node) => default;
 	public virtual TResult Visit(PointerIndirectionExpr node) => default;
@@ -763,6 +784,8 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public virtual TResult Visit(ExpressionStmt node) => default;
 	public virtual TResult Visit(UsingDirective node) => default;
 	public virtual TResult Visit(EnumDecl node) => default;
+	public virtual TResult Visit(EnumCaseDecl node) => default;
+	public virtual TResult Visit(EnumCaseItem node) => default;
 	public virtual TResult Visit(TypeAliasDecl node) => default;
 	public virtual TResult Visit(FieldDecl node) => default;
 	public virtual TResult Visit(PropertyDecl node) => default;
@@ -801,6 +824,7 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public virtual TResult Visit(CastExpr node) => default;
 	public virtual TResult Visit(RefExpr node) => default;
 	public virtual TResult Visit(OutExpr node) => default;
+	public virtual TResult Visit(ParamsExpr node) => default;
 	public virtual TResult Visit(VarExpr node) => default;
 	public virtual TResult Visit(LetExpr node) => default;
 	public virtual TResult Visit(PointerIndirectionExpr node) => default;
@@ -864,6 +888,8 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public Object IASTVisitorWithCustomResult.Visit(ExpressionStmt node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(UsingDirective node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(EnumDecl node) => ((Self)this).Visit(node);
+	public Object IASTVisitorWithCustomResult.Visit(EnumCaseDecl node) => ((Self)this).Visit(node);
+	public Object IASTVisitorWithCustomResult.Visit(EnumCaseItem node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(TypeAliasDecl node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(FieldDecl node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(PropertyDecl node) => ((Self)this).Visit(node);
@@ -902,6 +928,7 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public Object IASTVisitorWithCustomResult.Visit(CastExpr node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(RefExpr node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(OutExpr node) => ((Self)this).Visit(node);
+	public Object IASTVisitorWithCustomResult.Visit(ParamsExpr node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(VarExpr node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(LetExpr node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(PointerIndirectionExpr node) => ((Self)this).Visit(node);

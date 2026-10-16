@@ -6,6 +6,7 @@ namespace BeefParser.AST
 	[ImplementAccept, ImplementToString]
 	class ForeachStmt : Statement
 	{
+		public bool IsAnonymous = false; // for (collection) without an explicit iteration variable.
 		public TypeSpec TargetType ~ delete _;
 		private String mTargetName ~ delete _;
 		public Expression SourceExpr ~ delete _;

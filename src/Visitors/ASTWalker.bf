@@ -39,7 +39,7 @@ namespace BeefParser.AST
             return VisitResult.Continue;
         }
 
-        public VisitResult VisitDictionary(Dictionary<StringView, Expression> dict)
+        public VisitResult VisitDictionary(Dictionary<String, Expression> dict)
         {
             if (dict == null)
             {
@@ -137,7 +137,7 @@ namespace BeefParser.AST
         {
             if (Visit(methodDecl.Specification) == VisitResult.Stop) return VisitResult.Stop;
             if (VisitList(methodDecl.FormalParameters) == VisitResult.Stop) return VisitResult.Stop;
-            return Visit(methodDecl.CompoundStmt);
+            return Visit(methodDecl.Body);
         }
 
         public override VisitResult Visit(NullLiteral nullConstExpr) => VisitResult.Continue;
@@ -366,6 +366,11 @@ namespace BeefParser.AST
             return Visit(refExpr.Expr);
         }
 
+        public override VisitResult Visit(ParamsExpr paramsExpr)
+        {
+            return Visit(paramsExpr.Expr);
+        }
+
         public override VisitResult Visit(OutExpr outExpr)
         {
             return Visit(outExpr.Expr);
@@ -510,6 +515,7 @@ namespace BeefParser.AST
 
         public override VisitResult Visit(DeleteOpExpr node)
         {
+            if (Visit(node.Target) == VisitResult.Stop) return VisitResult.Stop;
             return Visit(node.Expr);
         }
 

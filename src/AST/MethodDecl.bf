@@ -13,12 +13,19 @@ namespace BeefParser.AST
 		public List<String> GenericParametersNames = new .() ~ Release!(_);
 		public List<GenericConstraintDecl> GenericConstraints = new .() ~ Release!(_);
 		public List<ParamDecl> FormalParameters = new .() ~ Release!(_);
-		public Statement CompoundStmt ~ delete _;
+		public ASTNode Body ~ delete _; // CompoundStmt or Expression
 		public bool IsConstructor;
 		public bool IsDestructor;
 		public bool IsOperator;
 		public bool IsMutable;
 		public OperatorType OperatorType;
+		public TokenType? OperatorToken;
+
+		public Statement CompoundStmt
+		{
+			get => Body as Statement;
+			set => Body = value;
+		}
 
 		// for explicit interface implementations
 		public StringView InterfaceName
