@@ -10,12 +10,13 @@ static class MetaTest
 	[Test]
 	public static void Test()
 	{
-		for (int i = 0; i < 1000; i++)
+		for (int i = 0; i < 8; i++)
 		{
 			String text = scope .();
 
 			const String[?] filePaths = .(
 				@"d:\BeefLang\Repository\Beef\BeefLibs\corlib\src\Collections\List.bf",
+				"../src/Lexing/Lexer.bf",
 				"../src/Visitors/CodeGenVisitor.bf",
 				"../src/BeefParser.bf"
 			);

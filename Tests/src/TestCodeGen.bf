@@ -7,7 +7,7 @@ static class TestCodeGen
 	[Test]
 	public static void TestToString()
 	{
-		let parser = scope BeefParser("namespace X { class Y { static void Z() { MyCall(ref SomethingElse, out Output[0]); } } }");
+		let parser = scope BeefParser("namespace X; class Y { static void Z() { MyCall(ref SomethingElse, out Output[0]); } }");
 		parser.Parse(let root);
 		defer delete root;
 

@@ -162,6 +162,12 @@ namespace BeefParser.AST
             return declStmt;
         }
 
+        public override ASTNode Visit(LocalMethodStmt localMethodStmt)
+        {
+            localMethodStmt.MethodDeclaration = (MethodDecl)Visit(localMethodStmt.MethodDeclaration);
+            return localMethodStmt;
+        }
+
         public override ASTNode Visit(UsingStmt usingStmt)
         {
             usingStmt.Decl = (VariableDecl)Visit(usingStmt.Decl);

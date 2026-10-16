@@ -5,7 +5,7 @@ namespace BeefParser
 	struct Token
 	{
 		public TokenType Type { get; set mut; }
-		private StringView _value;
+		private StringView _value = .();
 		public int Position { get; }
 
 		public this(TokenType type, int position, StringView value)
@@ -19,7 +19,6 @@ namespace BeefParser
 		{
 		    Type = type;
 		    Position = position;
-			_value = .();
 		}
 
 		public override void ToString(String outStr)

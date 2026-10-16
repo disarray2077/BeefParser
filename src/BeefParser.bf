@@ -1576,6 +1576,16 @@ namespace BeefParser
 		
 		private ParseResult<void> methodDecl(ref List<Declaration> decls)
 		{
+			MethodDecl decl = null;
+			let result = methodDecl(ref decl);
+			// Keep partially parsed methods owned by the parent on errors.
+			if (decl != null)
+				decls.Add(decl);
+			return result;
+		}
+
+		private ParseResult<void> methodDecl(ref MethodDecl declaration, bool isLocal = false)
+		{
 			ScopedValueRollback<int> rollback = scope .(ref _tokenIndex);
 
 			defer
@@ -1689,7 +1699,7 @@ namespace BeefParser
 					IsOperator = isOperator,
 					OperatorType = opType
 				};
-				decls.Add(decl);
+				declaration = decl;
 
 				if (!isOperator)
 				{
@@ -1748,6 +1758,8 @@ namespace BeefParser
 				bool hasBody = TryParse!(compoundStatement(ref decl.CompoundStmt));
 				if (!hasBody)
 				{
+					if (isLocal)
+						raiseError!(_currentToken.Position, "Local method must declare a body");
 					if (_currentToken.Type == TokenType.Semi && !decl.Modifiers.HasFlag(.Abstract) && !decl.Modifiers.HasFlag(.Extern) && _context.Type.GetType() != typeof(InterfaceDecl) && !_context.Type.Modifiers.HasFlag(.Abstract))
 						raiseError!(_currentToken.Position, "Non-abstract and non-extern method must declare a body");
 					eat!(TokenType.Semi);
@@ -3225,6 +3237,7 @@ namespace BeefParser
 							// Rollback to before the TypeSpec
 							_tokenIndex = tokenIndexBkp;
 							
+							// for ({var} in {enumerable})
 							let foreachStmt = new ForeachStmt();
 							stmt = foreachStmt;
 
@@ -3233,7 +3246,6 @@ namespace BeefParser
 							eat!(TokenType.Identifier);
 							foreachStmt.TargetName = _lastToken.AsText();
 							
-							// for ({var} in {enumerable})
 							eat!(TokenType.In);
 
 							Parse!(expression(ref foreachStmt.SourceExpr));
@@ -3505,6 +3517,37 @@ namespace BeefParser
 			return .NotSuitable;
 		}
 
+		private ParseResult<void> methodDeclarationStmt(ref Statement stmt)
+		{
+			ScopedValueRollback<int> rollback = scope .(ref _tokenIndex);
+
+			defer
+			{
+				if (!rollback.Cancelled)
+					_lastFailureIndex = _tokenIndex;
+			}
+
+			let tokenIndexBkp = _tokenIndex;
+
+			while (isModifier(_currentToken.Type) || isAccessModifier(_currentToken.Type))
+				eat!(_currentToken.Type);
+
+			// Check for a return type and method name before allocating an AST node.
+			if (!TryParse!(checkTypeSpec()))
+				return .NotSuitable;
+			if (_currentToken.Type != .Identifier ||
+				(_nextToken.Type != .LParen && _nextToken.Type != .LArrow && _nextToken.Type != .Dot))
+				return .NotSuitable;
+
+			rollback.Cancel();
+			_tokenIndex = tokenIndexBkp;
+
+			let localMethodStmt = new LocalMethodStmt();
+			stmt = localMethodStmt;
+			Parse!(methodDecl(ref localMethodStmt.MethodDeclaration, true));
+			return .Ok;
+		}
+
 		private ParseResult<void> declarationStmt(ref Statement stmt, bool needSemi)
 		{
 			ScopedValueRollback<int> rollback = scope .(ref _tokenIndex);
@@ -3663,6 +3706,7 @@ namespace BeefParser
 			TryParseReturn!(usingStmt(ref stmt));
 			TryParseReturn!(switchStmt(ref stmt));
 			TryParseReturn!(declarationStmt(ref stmt, needSemi));
+			TryParseReturn!(methodDeclarationStmt(ref stmt));
 			TryParseReturn!(expressionStmt(ref stmt, needSemi));
 
 			return .NotSuitable;

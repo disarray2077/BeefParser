@@ -161,6 +161,12 @@ public abstract class ASTVisitor
 		return .Continue;
 	}
 
+	public virtual VisitResult Visit(LocalMethodStmt node)
+	{
+		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
+		return .Continue;
+	}
+
 	public virtual VisitResult Visit(ExpressionStmt node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
@@ -644,6 +650,7 @@ public interface IASTVisitorWithCustomResult
 	public virtual TResult Visit(RepeatStmt node) => default;
 	public virtual TResult Visit(ReturnStmt node) => default;
 	public virtual TResult Visit(DeclarationStmt node) => default;
+	public virtual TResult Visit(LocalMethodStmt node) => default;
 	public virtual TResult Visit(ExpressionStmt node) => default;
 	public virtual TResult Visit(UsingDirective node) => default;
 	public virtual TResult Visit(EnumDecl node) => default;
@@ -752,6 +759,7 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public virtual TResult Visit(RepeatStmt node) => default;
 	public virtual TResult Visit(ReturnStmt node) => default;
 	public virtual TResult Visit(DeclarationStmt node) => default;
+	public virtual TResult Visit(LocalMethodStmt node) => default;
 	public virtual TResult Visit(ExpressionStmt node) => default;
 	public virtual TResult Visit(UsingDirective node) => default;
 	public virtual TResult Visit(EnumDecl node) => default;
@@ -852,6 +860,7 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 	public Object IASTVisitorWithCustomResult.Visit(RepeatStmt node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(ReturnStmt node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(DeclarationStmt node) => ((Self)this).Visit(node);
+	public Object IASTVisitorWithCustomResult.Visit(LocalMethodStmt node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(ExpressionStmt node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(UsingDirective node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(EnumDecl node) => ((Self)this).Visit(node);

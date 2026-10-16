@@ -939,9 +939,8 @@ public class CodeGenVisitor : ASTVisitor
 				BreakLine!();
 			}
 			
-			mCurMethod = methodDecl;
+			scope TemporaryChange<MethodDecl>(ref mCurMethod, methodDecl);
 			Visit(methodDecl.CompoundStmt);
-			mCurMethod = null;
 		}
 
 		return .Continue;
@@ -1028,23 +1027,18 @@ public class CodeGenVisitor : ASTVisitor
 			
 			for (var stmt in compStmt.Statements)
 			{
-				if (stmt.GetType().BaseType != typeof(Statement) ||
+				bool needsLine = stmt.GetType().BaseType != typeof(Statement) ||
 					stmt.GetType() == typeof(DeclarationStmt) ||
 					stmt.GetType() == typeof(ReturnStmt) ||
 					stmt.GetType() == typeof(ContinueStmt) ||
-					stmt.GetType() == typeof(BreakStmt))
+					stmt.GetType() == typeof(BreakStmt);
+				if (needsLine)
 					Write!("", true);
 
 				Visit(stmt);
 
-				if (stmt.GetType().BaseType != typeof(Statement) ||
-					stmt.GetType() == typeof(DeclarationStmt) ||
-					stmt.GetType() == typeof(ReturnStmt) ||
-					stmt.GetType() == typeof(ContinueStmt) ||
-					stmt.GetType() == typeof(BreakStmt))
-				{
+				if (needsLine)
 					BreakLine!();
-				}
 			}
 		}
 
@@ -1059,6 +1053,12 @@ public class CodeGenVisitor : ASTVisitor
 		if (deferStmt.Bind == .RootScope) Write!("::");
 		BreakLine!();
 		Visit(deferStmt.Body);
+		return .Continue;
+	}
+
+	public override VisitResult Visit(LocalMethodStmt localMethodStmt)
+	{
+		Visit(localMethodStmt.MethodDeclaration);
 		return .Continue;
 	}
 
