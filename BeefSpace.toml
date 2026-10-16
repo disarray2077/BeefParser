@@ -1,12 +1,15 @@
 FileVersion = 1
-Projects = {BeefParser = {Path = "."}, "BeefParser.Tests" = {Path = "Tests"}}
 
 [Workspace]
 StartupProject = "BeefParser"
-PreprocessorMacros = ["VERBOSE", "DEBUG"]
+PreprocessorMacros = ["_VERBOSE", "DEBUG"]
 
 [[Workspace.DistinctOptions]]
 Filter = ""
+
+[Projects]
+BeefParser = {Path = "."}
+"BeefParser.Tests" = {Path = "Tests"}
 
 [Configs.Test.Win64]
 AllocStackTraceDepth = 10

@@ -16,6 +16,7 @@ static class MetaTest
 
 			const String[?] filePaths = .(
 				@"d:\BeefLang\Repository\Beef\BeefLibs\corlib\src\Collections\List.bf",
+				@"d:\BeefLang\Repository\Beef\BeefLibs\corlib\src\String.bf",
 				"../src/Lexing/Lexer.bf",
 				"../src/Visitors/CodeGenVisitor.bf",
 				"../src/BeefParser.bf"

@@ -11,8 +11,4 @@ DebugWorkingDirectory = "$(ProjectDir)/src"
 
 [[ProjectFolder.Items]]
 Type = "IgnoreSource"
-Name = "MetaTest.bf"
-
-[[ProjectFolder.Items]]
-Type = "IgnoreSource"
 Name = "Test3.bf"

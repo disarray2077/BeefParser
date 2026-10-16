@@ -4,3 +4,11 @@ FileVersion = 1
 Name = "BeefParser"
 TargetType = "BeefLib"
 StartupObject = "BeefParser.Program"
+
+[[ProjectFolder.Items]]
+Type = "AutoFolder"
+Name = "Visitors"
+
+[[ProjectFolder.Items.Items]]
+Type = "IgnoreSource"
+Name = "ASTRewriter - Copy.bf"
