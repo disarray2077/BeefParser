@@ -543,7 +543,7 @@ namespace BeefParser
 
 			    repeat
 			    {
-			        var element = new TupleTypeSpec.Element();
+			        var element = new TupleElement();
 			        tupleType.Elements.Add(element);
 
 			        Parse!(typeSpec(ref element.Specification));
@@ -976,23 +976,21 @@ namespace BeefParser
 				if (let enumDecl = decl as EnumDecl && _currentToken.Type == .Identifier &&
 					(_nextToken.Type == .Assign || _nextToken.Type == .Comma || _nextToken.Type == .RCurly))
 				{
+					let memberNames = scope HashSet<StringView>();
 					repeat
 					{
 						if (!tryEat!(TokenType.Identifier))
 							break;
-						
+
 						// TODO: Attributes support
-						var key = _lastToken.AsText();
+						let name = _lastToken.AsText();
+						if (!memberNames.Add(name))
+							raiseErrorF!(_lastToken.Position, "A field named '{}' has already been declared.", name);
 
-						if (enumDecl.SimpleDeclarations.ContainsKeyAlt(key))
-							raiseErrorF!(_lastToken.Position, "A field named '{}' has already been declared.", key);
-
-						enumDecl.SimpleDeclarations.TryAddAlt(key, let keyPtr, let exprPtr);
-						*keyPtr = new String(key);
-						*exprPtr = null;
-
+						let member = new EnumMemberDecl() { Name = name };
+						enumDecl.Members.Add(member);
 						if (tryEat!(TokenType.Assign))
-							Parse!(expression(ref *exprPtr));
+							Parse!(expression(ref member.Initializer));
 					} while (tryEat!(TokenType.Comma));
 				}
 				else
@@ -2492,30 +2490,29 @@ namespace BeefParser
 				bool isScope = _lastToken.Type == .Scope;
 				TypeSpec typeSpec = null;
 				
-				BindType bind = .Undefined;
+				BindingSpec bind = null;
+				defer { delete bind; }
 				if (tryEat!(TokenType.Colon))
 				{
 					if (tryEat!(TokenType.Mixin))
 					{
-						bind = .Mixin;
+						bind = new .() { Kind = .Mixin };
 					}
 					else if (tryEat!(TokenType.LParen))
 					{
-						bind = .Custom(null);
-						if (bind case .Custom(var ref bindExpr))
-							Parse!(expression(ref bindExpr));
+						bind = new .() { Kind = .Custom };
+						Parse!(expression(ref bind.Target));
 						eat!(TokenType.RParen);
 					}
 					else
 					{
-						bind = .Custom(null);
-						if (bind case .Custom(var ref bindExpr))
-							Parse!(expression(ref bindExpr));
+						bind = new .() { Kind = .Custom };
+						Parse!(expression(ref bind.Target));
 					}
 				}
 				else if (tryEat!(TokenType.DoubleColon))
 				{
-					bind = .RootScope;
+					bind = new .() { Kind = .RootScope };
 				}
 
 				if (tryEat!(TokenType.LBracket))
@@ -2533,6 +2530,7 @@ namespace BeefParser
 						Bind = bind,
 						CommaCount = commaCount
 					};
+					bind = null;
 
 					return .Ok;
 				}
@@ -2546,6 +2544,7 @@ namespace BeefParser
 						IsAppend = isAppend,
 						Bind = bind,
 					};
+					bind = null;
 					expr = newInterpolatedExpr;
 					return primaryExpr(ref newInterpolatedExpr.Expr);
 				}
@@ -2559,6 +2558,7 @@ namespace BeefParser
 						IsAppend = isAppend,
 						Bind = bind,
 					};
+					bind = null;
 					expr = newLambdaExpr;
 					return primaryExpr(ref newLambdaExpr.Expr);
 				}
@@ -2590,6 +2590,7 @@ namespace BeefParser
 							TypeSpec = arrayType,
 							IsRawAllocation = isRawAllocation
 						};
+						bind = null;
 						expr = newOpExpr;
 	
 						TryParse!(arrayInitExpr(ref newOpExpr.Initializer));
@@ -2603,6 +2604,7 @@ namespace BeefParser
 							Bind = bind,
 							TypeSpec = typeSpec
 						};
+						bind = null;
 						expr = newOpExpr;
 	
 						if (tryEat!(TokenType.LParen))
@@ -3491,11 +3493,11 @@ namespace BeefParser
 				if (tryEat!(TokenType.Colon))
 				{
 					eat!(TokenType.Mixin);
-					deferStmt.Bind = .Mixin;
+					deferStmt.Bind = new .() { Kind = .Mixin };
 				}
 				else if (tryEat!(TokenType.DoubleColon))
 				{
-					deferStmt.Bind = .RootScope;
+					deferStmt.Bind = new .() { Kind = .RootScope };
 				}
 
 				Parse!(statement(ref deferStmt.Body, true));

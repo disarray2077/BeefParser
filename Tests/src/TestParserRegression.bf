@@ -26,7 +26,7 @@ static class TestParserRegression
 
 		let flags = (EnumDecl)root.Declarations[0];
 		Test.Assert(flags.IsSimpleEnum);
-		Test.Assert(flags.SimpleDeclarations.Count == 3);
+		Test.Assert(flags.Members.Count == 3);
 		Test.Assert(flags.Inheritance.Count == 1);
 		let result = (EnumDecl)root.Declarations[1];
 		Test.Assert(!result.IsSimpleEnum);
@@ -45,7 +45,7 @@ static class TestParserRegression
 		defer delete formattedRoot;
 
 		let formattedFlags = (EnumDecl)formattedRoot.Declarations[0];
-		Test.Assert(formattedFlags.SimpleDeclarations.Count == flags.SimpleDeclarations.Count);
+		Test.Assert(formattedFlags.Members.Count == flags.Members.Count);
 		let formattedResult = (EnumDecl)formattedRoot.Declarations[1];
 		Test.Assert(formattedResult.GenericParametersNames[0] == "T");
 		Test.Assert(formattedResult.Inheritance[0].ToString(.. scope .()) == "IDisposable");

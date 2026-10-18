@@ -17,6 +17,12 @@ public abstract class ASTVisitor
 		}
 	}
 
+	public virtual VisitResult Visit(TupleElement node) => Visit((ASTNode)node);
+
+	public virtual VisitResult Visit(BindingSpec node) => Visit((ASTNode)node);
+
+	public virtual VisitResult Visit(EnumMemberDecl node) => Visit((ASTNode)node);
+
 	public virtual VisitResult Visit(ASTNode node)
 	{
 		Debug.WriteLine(scope $"No visitor implemented for '{node.GetType()}'");
@@ -646,6 +652,9 @@ public interface IASTVisitorWithCustomResult
 {
 	protected typealias TResult = Object;
 	public virtual TResult Visit(ASTNode node) => default;
+	public virtual TResult Visit(TupleElement node) => default;
+	public virtual TResult Visit(BindingSpec node) => default;
+	public virtual TResult Visit(EnumMemberDecl node) => default;
 	public virtual TResult Visit(CompilationUnit node) => default;
 	public virtual TResult Visit(NamespaceDecl node) => default;
 	public virtual TResult Visit(ClassDecl node) => default;
@@ -758,6 +767,9 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 		return default;
 	}
 
+	public virtual TResult Visit(TupleElement node) => default;
+	public virtual TResult Visit(BindingSpec node) => default;
+	public virtual TResult Visit(EnumMemberDecl node) => default;
 	public virtual TResult Visit(CompilationUnit node) => default;
 	public virtual TResult Visit(NamespaceDecl node) => default;
 	public virtual TResult Visit(ClassDecl node) => default;
@@ -862,6 +874,9 @@ public abstract class ASTVisitor<TResult> : IASTVisitorWithCustomResult
 
 #region Dispatch	
 	public Object IASTVisitorWithCustomResult.Visit(ASTNode node) => ((Self)this).Visit(node);
+	public Object IASTVisitorWithCustomResult.Visit(TupleElement node) => ((Self)this).Visit(node);
+	public Object IASTVisitorWithCustomResult.Visit(BindingSpec node) => ((Self)this).Visit(node);
+	public Object IASTVisitorWithCustomResult.Visit(EnumMemberDecl node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(CompilationUnit node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(NamespaceDecl node) => ((Self)this).Visit(node);
 	public Object IASTVisitorWithCustomResult.Visit(ClassDecl node) => ((Self)this).Visit(node);

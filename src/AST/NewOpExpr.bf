@@ -7,7 +7,7 @@ namespace BeefParser.AST
 	{
 		public bool IsAppend; // append .()
 		public bool IsScope; // scope .()
-		public BindType Bind ~ if (Bind case .Custom(let bindExpr)) delete bindExpr;
+		public BindingSpec Bind ~ delete _;
 		public bool IsInplace; // .()
 		public TypeSpec TypeSpec ~ delete _;
 		public List<Expression> Arguments ~ Release!(_);

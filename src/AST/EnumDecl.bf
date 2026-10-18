@@ -6,8 +6,8 @@ namespace BeefParser.AST
 	[ImplementAccept, ImplementToString]
 	class EnumDecl : TypeDecl
 	{
-		public Dictionary<String, Expression> SimpleDeclarations = new .() ~ Release!(_);
+		public List<EnumMemberDecl> Members = new .() ~ Release!(_);
 
-		public bool IsSimpleEnum => !SimpleDeclarations.IsEmpty;
+		public bool IsSimpleEnum => !Members.IsEmpty;
 	}
 }

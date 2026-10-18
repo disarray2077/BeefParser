@@ -75,18 +75,19 @@ namespace BeefParser.AST
 	[ImplementAccept, ImplementToString]
 	public class TupleTypeSpec : TypeSpec
 	{
-	    public class Element
-	    {
-	        public TypeSpec Specification ~ delete _;
-	        private String mName ~ delete _;
+	    public List<TupleElement> Elements = new .() ~ Release!(_);
+	}
 
-			public StringView Name
-			{
-				get => mName;
-				set => String.NewOrSet!(mName, value);
-			}
-	    }
+	[ImplementAccept, ImplementToString]
+	class TupleElement : ASTNode
+	{
+		public TypeSpec Specification ~ delete _;
+		private String mName ~ delete _;
 
-	    public List<Element> Elements = new .() ~ Release!(_);
+		public StringView Name
+		{
+			get => mName;
+			set => String.NewOrSet!(mName, value);
+		}
 	}
 }

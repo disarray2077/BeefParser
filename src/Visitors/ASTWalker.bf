@@ -115,7 +115,7 @@ namespace BeefParser.AST
         public override VisitResult Visit(EnumDecl enumDecl)
         {
 			if (enumDecl.IsSimpleEnum)
-            	return VisitDictionary(enumDecl.SimpleDeclarations);
+                return VisitList(enumDecl.Members);
 			else
 				return VisitList(enumDecl.Declarations);
         }
@@ -159,6 +159,7 @@ namespace BeefParser.AST
 
         public override VisitResult Visit(DeferStmt deferStmt)
         {
+            if (Visit((ASTNode)deferStmt.Bind) == VisitResult.Stop) return VisitResult.Stop;
             return Visit(deferStmt.Body);
         }
 
@@ -319,6 +320,7 @@ namespace BeefParser.AST
 
         public override VisitResult Visit(NewOpExpr newOpExpr)
         {
+            if (Visit((ASTNode)newOpExpr.Bind) == VisitResult.Stop) return VisitResult.Stop;
             if (Visit(newOpExpr.TypeSpec) == VisitResult.Stop) return VisitResult.Stop;
             if (VisitList(newOpExpr.Arguments) == VisitResult.Stop) return VisitResult.Stop;
             return Visit(newOpExpr.Initializer);
@@ -326,13 +328,15 @@ namespace BeefParser.AST
 
         public override VisitResult Visit(NewArrayOpExpr newArrayOpExpr)
         {
-            if (Visit(newArrayOpExpr.TypeSpec) == VisitResult.Stop) return VisitResult.Stop;
-            return Visit(newArrayOpExpr.Initializer);
+            if (Visit((ASTNode)newArrayOpExpr.Bind) == VisitResult.Stop) return VisitResult.Stop;
+            if (Visit((ASTNode)newArrayOpExpr.TypeSpec) == VisitResult.Stop) return VisitResult.Stop;
+            return Visit((ASTNode)newArrayOpExpr.Initializer);
         }
 
         public override VisitResult Visit(NewArrayImplicitOpExpr newArrayImplicitOpExpr)
         {
-            return Visit(newArrayImplicitOpExpr.Initializer);
+            if (Visit((ASTNode)newArrayImplicitOpExpr.Bind) == VisitResult.Stop) return VisitResult.Stop;
+            return Visit((ASTNode)newArrayImplicitOpExpr.Initializer);
         }
 
         public override VisitResult Visit(AssignExpr assignOpExpr)
@@ -457,15 +461,22 @@ namespace BeefParser.AST
 
         public override VisitResult Visit(TupleTypeSpec node)
         {
-			for (let element in node.Elements)
-			{
-				var result = Visit(element.Specification);
-            	if (result != .Continue)
-				{
-					return result;
-				}
-			}
-			return .Continue;
+            return VisitList(node.Elements);
+        }
+
+        public override VisitResult Visit(TupleElement node)
+        {
+            return Visit(node.Specification);
+        }
+
+        public override VisitResult Visit(BindingSpec node)
+        {
+            return Visit(node.Target);
+        }
+
+        public override VisitResult Visit(EnumMemberDecl node)
+        {
+            return Visit(node.Initializer);
         }
 
         public override VisitResult Visit(ExprModTypeSpec node)
@@ -494,11 +505,13 @@ namespace BeefParser.AST
 
         public override VisitResult Visit(NewInterpolatedStringOpExpr node)
         {
+            if (Visit((ASTNode)node.Bind) == VisitResult.Stop) return VisitResult.Stop;
             return Visit(node.Expr);
         }
 
         public override VisitResult Visit(NewLambdaOpExpr node)
         {
+            if (Visit((ASTNode)node.Bind) == VisitResult.Stop) return VisitResult.Stop;
             return Visit(node.Expr);
         }
 

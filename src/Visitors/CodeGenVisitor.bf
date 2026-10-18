@@ -567,18 +567,11 @@ public class CodeGenVisitor : ASTVisitor
 
 			if (enumDecl.IsSimpleEnum)
 			{
-				int i = 0;
-				for (var decl in enumDecl.SimpleDeclarations)
+				for (let member in enumDecl.Members)
 				{
-					Write!(decl.key, true);
-	
-					if (decl.value != null)
-					{
-						Write!(" = ");
-						Visit(decl.value);
-					}
-	
-					if (++i != enumDecl.SimpleDeclarations.Count)
+					Write!("", true);
+					Visit(member);
+					if (@member.Index != enumDecl.Members.Count - 1)
 					{
 						Write!(",");
 						BreakLine!();
@@ -599,6 +592,17 @@ public class CodeGenVisitor : ASTVisitor
 
 		BreakLine!();
 		WriteLine!("}", true);
+		return .Continue;
+	}
+
+	public override VisitResult Visit(EnumMemberDecl member)
+	{
+		Write!(member.Name);
+		if (member.Initializer != null)
+		{
+			Write!(" = ");
+			Visit(member.Initializer);
+		}
 		return .Continue;
 	}
 
@@ -1204,8 +1208,8 @@ public class CodeGenVisitor : ASTVisitor
 	public override VisitResult Visit(DeferStmt deferStmt)
 	{
 		Write!("defer", true);
-		if (deferStmt.Bind == .Mixin) Write!(":mixin");
-		if (deferStmt.Bind == .RootScope) Write!("::");
+		if (deferStmt.Bind != null)
+			Visit(deferStmt.Bind);
 		BreakLine!();
 		Visit(deferStmt.Body);
 		return .Continue;
@@ -1713,25 +1717,32 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 
-	private void WriteAllocationPrefix(bool isScope, bool isAppend, BindType bind)
+	private void WriteAllocationPrefix(bool isScope, bool isAppend, BindingSpec bind)
 	{
 		if (isScope) Write!("scope");
 		else if (isAppend) Write!("append");
 		else Write!("new");
 
-		switch (bind)
+		if (bind != null)
+			Visit(bind);
+	}
+
+	public override VisitResult Visit(BindingSpec bind)
+	{
+		switch (bind.Kind)
 		{
 		case .Undefined:
 			break;
 		case .RootScope: Write!("::");
 		case .Mixin: Write!(":mixin");
-		case .Custom(let bindExpr):
+		case .Custom:
 			Write!(":");
-			bool needsParens = !(bindExpr is IdentifierExpr);
+			bool needsParens = !(bind.Target is IdentifierExpr);
 			if (needsParens) Write!("(");
-			Visit(bindExpr);
+			Visit(bind.Target);
 			if (needsParens) Write!(")");
 		}
+		return .Continue;
 	}
 
 	public override VisitResult Visit(NewOpExpr newOpExpr)
@@ -2104,17 +2115,23 @@ public class CodeGenVisitor : ASTVisitor
 		Write!("(");
 		for (let element in tupleTypeSpec.Elements)
 		{
-			Visit(element.Specification);
-			if (!element.Name.IsEmpty)
-			{
-				Write!(" ");
-				Write!(element.Name);
-			}
+			Visit(element);
 
 			if (@element.Index < tupleTypeSpec.Elements.Count - 1)
 				Write!(", ");
 		}
 		Write!(")");
+		return .Continue;
+	}
+
+	public override VisitResult Visit(TupleElement element)
+	{
+		Visit(element.Specification);
+		if (!element.Name.IsEmpty)
+		{
+			Write!(" ");
+			Write!(element.Name);
+		}
 		return .Continue;
 	}
 
