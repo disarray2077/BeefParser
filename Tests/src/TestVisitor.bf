@@ -7,7 +7,7 @@ namespace BeefParser.Tests;
 
 static class TestVisitor
 {
-	class MyASTVisitor : ASTVisitor
+	class MyASTVisitor : ASTWalker
 	{
 		public int Found = 0;
 

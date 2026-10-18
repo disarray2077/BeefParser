@@ -2143,12 +2143,6 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 
-	public override VisitResult Visit(SimpleName node)
-	{
-		Write!(node.Identifier);
-		return .Continue;
-	}
-
 	public override VisitResult Visit(IdentifierName node)
 	{
 		Write!(node.Identifier);

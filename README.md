@@ -119,7 +119,7 @@ namespace MyProject
 
 ### Traversing and Analyzing AST with Custom Visitors
 
-The BeefParser library provides an `ASTVisitor` base class that allows you to traverse and analyze the parsed AST using the visitor pattern.
+Use `ASTWalker` to traverse and analyze the whole parsed tree.
 
 ```bf
 using System;
@@ -131,7 +131,7 @@ namespace MyProject
     class Program
     {
         /// Visitor that counts different types of declarations
-        class CodeAnalyzer : ASTVisitor
+        class CodeAnalyzer : ASTWalker
         {
             public int ClassCount = 0;
             public int MethodCount = 0;

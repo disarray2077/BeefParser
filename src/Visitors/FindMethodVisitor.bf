@@ -2,7 +2,7 @@ using System;
 
 namespace BeefParser.AST;
 
-class FindMethodVisitor : ASTVisitor
+class FindMethodVisitor : ASTWalker
 {
 	private StringView mMethodName;
 	public MethodDecl FoundMethod { get; private set; }

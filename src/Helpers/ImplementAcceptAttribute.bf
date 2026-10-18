@@ -12,13 +12,7 @@ struct ImplementAcceptAttribute : Attribute, IOnTypeInit
 			"""
 			public override VisitResult Accept(ASTVisitor visitor)
 			{
-				switch (visitor.Visit(this))
-				{
-				case .Continue, .SkipAndContinue:
-					return .Continue;
-				case .Stop:
-					return .Stop;
-				}
+				return visitor.Visit(this);
 			}\n
 			""");
 		Compiler.EmitTypeBody(type,
