@@ -2514,7 +2514,9 @@ namespace BeefParser
 					else
 					{
 						bind = new .() { Kind = .Custom };
-						Parse!(expression(ref bind.Target));
+						// A bare allocator name ends before the allocation's inferred
+						// type, array dimensions, or lambda. Complex targets use (...).
+						Parse!(primaryExpr(ref bind.Target));
 					}
 				}
 				else if (tryEat!(TokenType.DoubleColon))

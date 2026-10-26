@@ -1784,8 +1784,13 @@ public class CodeGenVisitor : ASTVisitor
 
 		if (newArrayOpExpr.Initializer != null)
 		{
-			Visit(newArrayOpExpr.Initializer);
-			Write!(" ");
+			Write!("(");
+			for (let value in newArrayOpExpr.Initializer.Values)
+			{
+				if (@value.Index > 0) Write!(", ");
+				Visit(value);
+			}
+			Write!(")");
 		}
 
 		return .Continue;

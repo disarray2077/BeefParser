@@ -182,6 +182,36 @@ static class TestAstStructure
 	}
 
 	[Test]
+	public static void BareAllocatorEndsBeforeInferredConstructorsAndLambdas()
+	{
+		String[?] inputs = .("new:allocator .(1)", "new:allocator () => 1",
+			"new:allocator int[count]*", "new:allocator $\"value {count}\"");
+		for (let input in inputs)
+		{
+			let parser = scope BeefParser(input);
+			Test.Assert(parser.ParseTo(let expr) case .Ok);
+			defer delete expr;
+			Test.Assert(GetBinding(expr).Target is IdentifierExpr);
+			Test.Assert(((IdentifierExpr)GetBinding(expr).Target).Value == "allocator");
+			let formatted = expr.ToString(.. scope .());
+			let roundTripParser = scope BeefParser(formatted);
+			Test.Assert(roundTripParser.ParseTo(let roundTrip) case .Ok);
+			defer delete roundTrip;
+			Test.Assert(roundTrip.GetType() == expr.GetType());
+			Test.Assert(roundTrip.ToString(.. scope .()) == formatted);
+		}
+	}
+
+	[Test]
+	public static void ArrayAllocationsUseBeefInitializerSyntax()
+	{
+		let parser = scope BeefParser("new:allocator int[](1, 2, 3)");
+		Test.Assert(parser.ParseTo(let expression) case .Ok);
+		defer delete expression;
+		Test.Assert(expression.ToString(.. scope .()) == "new:allocator int[](1, 2, 3)");
+	}
+
+	[Test]
 	public static void AllAllocationFormsTraverseCustomBindingTargets()
 	{
 		Expression[?] expressions = .(new NewOpExpr(), new NewArrayOpExpr(), new NewArrayImplicitOpExpr(),
