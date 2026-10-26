@@ -496,7 +496,7 @@ namespace BeefParser
 			case .Dot:
 				eat!(_currentToken.Type);
 				spec = new DotTypeSpec();
-				return .Ok;
+				break;
 			case .Delegate, .Function:
 				eat!(_currentToken.Type);
 
@@ -930,11 +930,17 @@ namespace BeefParser
 			{
 			    decl = new ExtensionDecl();
 			}
-			else if (tryEat!(TokenType.Delegate))
+			else if (tryEat!(TokenType.Delegate) || tryEat!(TokenType.Function))
 			{
 				let delegateDecl = new DelegateDecl();
+				delegateDecl.IsFunction = _lastToken.Type == .Function;
 				decl = delegateDecl;
 				Parse!(typeSpec(ref delegateDecl.Specification));
+				if (_currentToken.Type == .LParen)
+				{
+					delete delegateDecl;
+					return .NotSuitable;
+				}
 			}
 			else
 			{
@@ -1056,6 +1062,11 @@ namespace BeefParser
 				Attributes = attrs
 			};
 
+			if (_currentToken.Type == .Identifier && _currentToken.AsText() == "this")
+			{
+				eat!(TokenType.Identifier);
+				paramDecl.IsExtensionThis = true;
+			}
 			if (tryEat!(TokenType.In))
 				paramDecl.IsIn = true;
 			else if (tryEat!(TokenType.Out))
@@ -1391,11 +1402,18 @@ namespace BeefParser
 				if (decl.Accessors.IsEmpty)
 					raiseErrorF!(_lastToken.Position, "Property or indexer '{}' must have at least one accessor", decl.Name);
 
+				bool initializedProperty = tryEat!(TokenType.Assign);
+				if (initializedProperty)
+				{
+					Parse!(expression(ref decl.Initializer));
+				}
 				if (tryEat!(TokenType.Tilde))
 				{
 					Parse!(statement(ref decl.Finalizer, false));
 					eat!(TokenType.Semi);
 				}
+				else if (initializedProperty)
+					eat!(TokenType.Semi);
 				return .Ok;
 			}
 
@@ -1689,7 +1707,7 @@ namespace BeefParser
 			{
 				opType = Try!(parseOpType());
 
-				if (opType != .None)
+				if (opType != .None && _currentToken.Type == .Operator)
 				{
 					eat!(TokenType.Operator);
 					isOperator = true;
@@ -1914,6 +1932,24 @@ namespace BeefParser
 		    return .Ok;
 		}
 
+		private ParseResult<void> staticBlockDecl(ref List<Declaration> decls)
+		{
+			if (_currentToken.Type != .Static || _nextToken.Type != .LCurly)
+				return .NotSuitable;
+
+			eat!(TokenType.Static);
+			eat!(TokenType.LCurly);
+
+			let block = new StaticBlockDecl();
+			decls.Add(block);
+			scope TemporaryChange<BaseTypeDecl>(ref _context.Type, block);
+			Try!(declarations(ref block.Declarations));
+
+			eat!(TokenType.RCurly);
+
+			return .Ok;
+		}
+
 		private Result<void> declarations(ref List<Declaration> decls, bool isNamespace = false)
 		{
 			while (_currentToken.Type != .RCurly && _currentToken.Type != .EOF)
@@ -1923,6 +1959,7 @@ namespace BeefParser
 
 				TryParseContinue!(usingDirective());
 				TryParseContinue!(namespaceDecl(ref decls));
+				TryParseContinue!(staticBlockDecl(ref decls));
 				TryParseContinue!(typeAliasDecl(ref decls));
 				TryParseContinue!(typeDecl(ref decls, isNamespace));
 
@@ -1999,7 +2036,7 @@ namespace BeefParser
 		}
 
 		private List<String> _lambdaParametersReusableList ~ Release!(_);
-		private ParseResult<void> lambdaOpExpr(ref Expression expr, bool expectParens = false)
+		private ParseResult<void> lambdaParameters(List<String> parameters, bool expectParens)
 		{
 			// X/(X) => X/{X}
 
@@ -2011,13 +2048,6 @@ namespace BeefParser
 					_lastFailureIndex = _tokenIndex;
 			}
 
-			// This is called for almost ALL identifiers, even if they aren't part of a lambda expression,
-			// so to avoid tons of unnecessary allocations we use an reusable list here.
-			if (_lambdaParametersReusableList == null)
-				_lambdaParametersReusableList = new .();
-			else
-				_lambdaParametersReusableList.ClearAndDeleteItems();
-			
 			if (!expectParens)
 			{
 				if (_nextToken.Type != TokenType.Bind)
@@ -2026,7 +2056,7 @@ namespace BeefParser
 				if (!tryEat!(isReservedType(_currentToken.Type) ? _currentToken.Type : TokenType.Identifier))
 					return .NotSuitable;
 
-				_lambdaParametersReusableList.Add(new .(_lastToken.AsText()));
+				parameters.Add(new .(_lastToken.AsText()));
 			}
 			else
 			{
@@ -2044,7 +2074,7 @@ namespace BeefParser
 						if (!tryEat!(isReservedType(_currentToken.Type) ? _currentToken.Type : TokenType.Identifier))
 							return .NotSuitable;
 	
-						_lambdaParametersReusableList.Add(new .(_lastToken.AsText()));
+						parameters.Add(new .(_lastToken.AsText()));
 					}
 					while (tryEat!(TokenType.Comma));
 	
@@ -2057,18 +2087,35 @@ namespace BeefParser
 				return .NotSuitable;
 
 			rollback.Cancel();
-			
+			return .Ok;
+		}
+
+		private ParseResult<void> lambdaOpExpr(ref Expression expr, bool expectParens = false)
+		{
+			// This is called for almost ALL identifiers, even if they aren't part of a lambda expression,
+			// so to avoid tons of unnecessary allocations we use an reusable list here.
+			if (_lambdaParametersReusableList == null)
+				_lambdaParametersReusableList = new .();
+			else
+				_lambdaParametersReusableList.ClearAndDeleteItems();
+
+			if (!TryParse!(lambdaParameters(_lambdaParametersReusableList, expectParens)))
+				return .NotSuitable;
+
 			ensureNull!(expr);
-			var lambdaOpExpr = new LambdaOpExpr();
-			expr = lambdaOpExpr;
+			let lambda = new LambdaOpExpr();
+			expr = lambda;
+			Swap!(lambda.FormalParameters, _lambdaParametersReusableList);
+			return lambdaBody(lambda);
+		}
 
-			Swap!(lambdaOpExpr.FormalParameters, _lambdaParametersReusableList);
-
-			if (TryParse!(compoundStatement(ref lambdaOpExpr.Statement)))
+		private ParseResult<void> lambdaBody(LambdaOpExpr lambda)
+		{
+			if (TryParse!(compoundStatement(ref lambda.Statement)))
 				return .Ok;
 
-			Debug.Assert(lambdaOpExpr.Statement == null);
-			Parse!(expression(ref lambdaOpExpr.Expr));
+			Debug.Assert(lambda.Statement == null);
+			Parse!(expression(ref lambda.Expr));
 			return .Ok;
 		}
 
@@ -2232,6 +2279,62 @@ namespace BeefParser
 		    return .Ok;
 		}
 
+		private bool isLambdaCaptureList()
+		{
+			if (_currentToken.Type != .LBracket)
+				return false;
+			int index = _tokenIndex + 1;
+			while (index < _tokens.Count && _tokens[index].Type != .RBracket && _tokens[index].Type != .EOF)
+				index++;
+			if (index + 1 >= _tokens.Count || _tokens[index + 1].Type != .LParen)
+				return false;
+			index += 2;
+			int depth = 1;
+			while (index < _tokens.Count && depth > 0)
+			{
+				if (_tokens[index].Type == .LParen)
+					depth++;
+				else if (_tokens[index].Type == .RParen)
+					depth--;
+				index++;
+			}
+			return depth == 0 && index < _tokens.Count && _tokens[index].Type == .Bind;
+		}
+
+		private Result<void> lambdaCaptureList(List<String> captures)
+		{
+			eat!(TokenType.LBracket);
+			if (_currentToken.Type != .RBracket)
+			{
+				repeat
+				{
+					let capture = new String();
+					captures.Add(capture);
+					if (tryEat!(TokenType.BitwiseAnd) || tryEat!(TokenType.Assign))
+						capture.Append(_lastToken.Type == .BitwiseAnd ? '&' : '=');
+					if (tryEat!(TokenType.Identifier))
+						capture.Append(_lastToken.AsText());
+					if (capture.IsEmpty)
+						raiseError!(_currentToken.Position, "Expected lambda capture");
+				} while (tryEat!(TokenType.Comma));
+			}
+			eat!(TokenType.RBracket);
+			return .Ok;
+		}
+
+		private ParseResult<void> capturedLambdaOpExpr(ref Expression expr)
+		{
+			if (!isLambdaCaptureList())
+				return .NotSuitable;
+
+			ensureNull!(expr);
+			let lambda = new LambdaOpExpr() { HasCaptureList = true, FormalParameters = new .() };
+			expr = lambda;
+			Try!(lambdaCaptureList(lambda.Captures));
+			Parse!(lambdaParameters(lambda.FormalParameters, true));
+			return lambdaBody(lambda);
+		}
+
 		private ParseResult<void> primaryExpr(ref Expression expr)
 		{
 			ScopedValueRollback<int> rollback = scope .(ref _tokenIndex, true);
@@ -2249,6 +2352,8 @@ namespace BeefParser
 			switch (_currentToken.Type)
 			{
 			case .LBracket:
+				TryParseReturn!(capturedLambdaOpExpr(ref expr));
+
 				ensureNull!(expr);
 				let attributedExpr = new AttributedExpr();
 				expr = attributedExpr;
@@ -2335,7 +2440,16 @@ namespace BeefParser
 				// We do this to make sure even the errored Expression gets deleted with the parent node.
 				Expression* expr = exprs.GrowUninitialized(1);
 				*expr = null;
-				Parse!(expression(ref *expr));
+				if (_currentToken.Type == .Identifier && _nextToken.Type == .Colon)
+				{
+					let named = new NamedArgumentExpr() { Name = new .(_currentToken.AsText()) };
+					*expr = named;
+					eat!(TokenType.Identifier);
+					eat!(TokenType.Colon);
+					Parse!(expression(ref named.Value));
+				}
+				else
+					Parse!(expression(ref *expr));
 			}
 			while (tryEat!(TokenType.Comma));
 
@@ -2547,6 +2661,8 @@ namespace BeefParser
 						// A bare allocator name ends before the allocation's inferred
 						// type, array dimensions, or lambda. Complex targets use (...).
 						Parse!(primaryExpr(ref bind.Target));
+						if (tryEat!(TokenType.Not))
+							bind.Target = new MixinMemberExpr() { Expr = bind.Target };
 					}
 				}
 				else if (tryEat!(TokenType.DoubleColon))
@@ -2554,7 +2670,20 @@ namespace BeefParser
 					bind = new .() { Kind = .RootScope };
 				}
 
-				if (tryEat!(TokenType.LBracket))
+				if (_currentToken.Type == .Bind || _currentToken.Type == .LParen || isLambdaCaptureList())
+				{
+					ensureNull!(expr);
+					let allocation = new NewLambdaOpExpr()
+					{
+						IsScope = isScope,
+						IsAppend = isAppend,
+						Bind = bind
+					};
+					bind = null;
+					expr = allocation;
+					return primaryExpr(ref allocation.Expr);
+				}
+				else if (tryEat!(TokenType.LBracket))
 				{
 					int commaCount = 0;
 					while (tryEat!(TokenType.Comma))
@@ -2586,20 +2715,6 @@ namespace BeefParser
 					bind = null;
 					expr = newInterpolatedExpr;
 					return primaryExpr(ref newInterpolatedExpr.Expr);
-				}
-				else if (_currentToken.Type == .LParen)
-				{
-					// TODO: Is here the most optimal place to parse this...?
-					ensureNull!(expr);
-					let newLambdaExpr = new NewLambdaOpExpr()
-					{
-						IsScope = isScope,
-						IsAppend = isAppend,
-						Bind = bind,
-					};
-					bind = null;
-					expr = newLambdaExpr;
-					return primaryExpr(ref newLambdaExpr.Expr);
 				}
 				else
 				{

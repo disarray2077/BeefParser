@@ -10,6 +10,7 @@ namespace BeefParser.AST
 		public String mName ~ delete _;
 		public List<PropertyAccessor> Accessors = new .() ~ Release!(_);
 		public Statement Finalizer ~ delete _;
+		public Expression Initializer ~ delete _;
 
 		public StringView Name
 		{

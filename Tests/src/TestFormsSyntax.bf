@@ -20,6 +20,80 @@ static class TestFormsSyntax
 	}
 
 	[Test]
+	public static void DeclarationFormsRoundTrip()
+	{
+		String[?] sources = .(
+			"namespace N; static { internal static int Size(this StringView text) => text.Length; private static mixin Release(var values) { for (let value in values) delete value; } }",
+			"class C { public function int Callback(int value); private delegate void() callback; public delegate void() Action { get; set; } }",
+			"class C { public bool AutoCheck { get; set; } = true; public int Start { get; set; } = .Manual; }",
+			"extension Event<T> { public implicit void operator+=(T value) mut { Add(value); } public implicit void operator-=(T value) mut { Remove(value); } }"
+		);
+		for (let source in sources)
+			RoundTrip(scope String(source));
+	}
+
+	[Test]
+	public static void AllocationsCapturesAndArgumentsRoundTrip()
+	{
+		String[?] expressions = .("Call(value: false)", "Call(option: flag ? 1 : 2, count: 3)", "new => OnClick", "scope => owner.Callback", "new:ScopedAlloc! .[size]", "scope [&] () => value = callback()", "scope [=] () => Tick()", "scope [&value, other] () => value = other", "scope [value] () => Tick(value)", "scope [] () => Tick()");
+		for (let source in expressions)
+		{
+			let parser = scope BeefParser(scope String(source));
+			parser.BreakOnError = false;
+			Test.Assert(parser.ParseTo(let expr) case .Ok, source);
+			defer delete expr;
+			let generated = expr.ToString(.. scope .());
+			let second = scope BeefParser(generated);
+			second.BreakOnError = false;
+			Test.Assert(second.ParseTo(let copy) case .Ok, generated);
+			defer delete copy;
+			Test.Assert(copy.ToString(.. scope .()) == generated, generated);
+		}
+	}
+
+	[Test]
+	public static void NewNodesParticipateInTraversal()
+	{
+		let parser = scope BeefParser("Call(value: new C())");
+		parser.BreakOnError = false;
+		Test.Assert(parser.ParseTo(let expr) case .Ok);
+		defer delete expr;
+		let call = (CallOpExpr)expr;
+		let named = (NamedArgumentExpr)call.Params[0];
+		Test.Assert(named.Name == "value");
+		Test.Assert(named.Value is NewOpExpr);
+		let walker = scope AllocationWalker();
+		Test.Assert(walker.Walk(expr) == .Continue);
+		Test.Assert(walker.Count == 1);
+	}
+
+	[Test]
+	public static void NestedCapturedLambdasKeepIndependentParameters()
+	{
+		let parser = scope BeefParser("scope [&] (value) => scope [value] (other) => value + other");
+		parser.BreakOnError = false;
+		Test.Assert(parser.ParseTo(let expr) case .Ok);
+		defer delete expr;
+		let outer = (LambdaOpExpr)((NewLambdaOpExpr)expr).Expr;
+		let inner = (LambdaOpExpr)((NewLambdaOpExpr)outer.Expr).Expr;
+		Test.Assert(outer.Captures[0] == "&");
+		Test.Assert(outer.FormalParameters[0] == "value");
+		Test.Assert(inner.Captures[0] == "value");
+		Test.Assert(inner.FormalParameters[0] == "other");
+	}
+
+	class AllocationWalker : ASTWalker
+	{
+		public int Count;
+
+		public override VisitResult Visit(NewOpExpr node)
+		{
+			Count++;
+			return base.Visit(node);
+		}
+	}
+
+	[Test]
 	public static void EscapedSurrogateCodeUnitsRoundTrip()
 	{
 		String[?] sources = .(@"'\u{D800}'", @"'\u{DFFF}'");
@@ -46,4 +120,16 @@ static class TestFormsSyntax
 		RoundTrip("class C { void F() { Call(sizeof(decltype(value))); } }");
 	}
 
+	[Test]
+	public static void RejectsIncompleteForms()
+	{
+		String[?] sources = .("class C { bool P { get; set; } = ; }", "class C { void F() { Call(value:); } }", "static { void F( }", "class C { void F() { let f = new =>; } }", "class C { void F() { let f = scope [&] () =>; } }");
+		for (let source in sources)
+		{
+			let parser = scope BeefParser(scope String(source));
+			parser.BreakOnError = false;
+			Test.Assert(parser.Parse(let root) case .Err, source);
+			Test.Assert(root == null);
+		}
+	}
 }

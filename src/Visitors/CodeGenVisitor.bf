@@ -270,6 +270,11 @@ public class CodeGenVisitor : ASTVisitor
 			Write!("}", true);
 		}
 
+		if (propertyDecl.Initializer != null)
+		{
+			Write!(" = ");
+			Visit(propertyDecl.Initializer);
+		}
 		if (propertyDecl.Finalizer != null)
 		{
 			Write!(" ~ ");
@@ -277,6 +282,8 @@ public class CodeGenVisitor : ASTVisitor
 			if (propertyDecl.Finalizer is CompoundStmt)
 				Write!(";");
 		}
+		else if (propertyDecl.Initializer != null)
+			Write!(";");
 		BreakLine!();
 
 		return .Continue;
@@ -401,6 +408,27 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 	
+	public override VisitResult Visit(NamedArgumentExpr node)
+	{
+		Write!(node.Name);
+		Write!(": ");
+		Visit(node.Value);
+		return .Continue;
+	}
+
+	public override VisitResult Visit(StaticBlockDecl node)
+	{
+		WriteLine!("static", true);
+		WriteLine!("{", true);
+		{
+			scope TemporaryChange<int>(ref mIdentation, mIdentation + 1);
+			for (let member in node.Declarations)
+				Visit(member);
+		}
+		WriteLine!("}", true);
+		return .Continue;
+	}
+
 	public override VisitResult Visit(ClassDecl classDecl)
 	{
 		if (!classDecl.Attributes.IsEmpty)
@@ -676,7 +704,7 @@ public class CodeGenVisitor : ASTVisitor
 		WriteAccessLevel(delDecl.AccessLevel);
 		WriteModifiers(delDecl.Modifiers);
 
-		Write!("delegate ");
+		Write!(delDecl.IsFunction ? "function " : "delegate ");
 		Write!(delDecl.Specification);
 		Write!(" ");
 		Write!(delDecl.Name);
@@ -774,6 +802,8 @@ public class CodeGenVisitor : ASTVisitor
 			Write!(" ");
 		}
 
+		if (paramDecl.IsExtensionThis)
+			Write!("this ");
 		if (paramDecl.IsIn)
 			Write!("in ");
 		else if (paramDecl.IsOut)
@@ -1016,6 +1046,11 @@ public class CodeGenVisitor : ASTVisitor
 
 		if (!methodDecl.IsConstructor && !methodDecl.IsDestructor && !isConversionOperator)
 		{
+			if (methodDecl.OperatorType != .None)
+			{
+				Write!(EnumToLowerString!(methodDecl.OperatorType));
+				Write!(" ");
+			}
 			Write!(methodDecl.Specification);
 			Write!(" ");
 		}
@@ -2048,6 +2083,17 @@ public class CodeGenVisitor : ASTVisitor
 
 	public override VisitResult Visit(LambdaOpExpr node)
 	{
+		if (node.HasCaptureList)
+		{
+			Write!("[");
+			for (let capture in node.Captures)
+			{
+				if (@capture.Index > 0)
+					Write!(", ");
+				Write!(capture);
+			}
+			Write!("] ");
+		}
 		Write!("(");
 		for (var parameter in node.FormalParameters)
 		{
