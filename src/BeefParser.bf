@@ -22,6 +22,9 @@ namespace BeefParser
 		private bool _errorRaisen = false;
 		private ParserContext _context = new ParserContext() ~ delete _;
 
+		public bool BreakOnError = true;
+		public int ErrorPosition { get; private set; }
+
 		public this(String text, bool copyText = false)
 		{
 		    _lexer = new Lexer(text, copyText);
@@ -176,13 +179,17 @@ namespace BeefParser
 		private void _raiseError(int position, String message = "")
 		{
 			_errorRaisen = true;
+			ErrorPosition = position;
+
+			if (!BreakOnError)
+				return;
 
 			_lexer.getSourcePosition(position, let sourcePosition);
 			printLocation(sourcePosition);
 		    Debug.WriteLine("{} in line {}:{}", message.IsEmpty ? "Invalid syntax" : message, sourcePosition.line, sourcePosition.collumn);
 			Debug.Break();
 
-#if DEBUG
+#if DEBUG || TEST
 			if (!Compiler.IsComptime)
 				GC.Collect(false);
 #endif
