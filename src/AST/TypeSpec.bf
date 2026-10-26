@@ -69,7 +69,7 @@ namespace BeefParser.AST
 	class ExprModTypeSpec : TypeSpec
 	{
 		public TokenType Type;
-		public Expression Expr;
+		public Expression Expr ~ delete _;
 	}
 	
 	[ImplementAccept, ImplementToString]

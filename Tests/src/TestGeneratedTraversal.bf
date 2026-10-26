@@ -181,12 +181,6 @@ static class TestGeneratedTraversal
 			""");
 		Test.Assert(parser.Parse(let root) case .Ok);
 		defer delete root;
-		// ExprModTypeSpec borrows its expression; the fixture owns these two roots.
-		let example = (ClassDecl)root.Declarations[0];
-		let baseTypeExpression = ((ExprModTypeSpec)((GenericName)example.Inheritance[0]).TypeArguments[0]).Expr;
-		let constraintExpression = ((ExprModTypeSpec)((TypeConstraint)example.GenericConstraints[0].Constraints[0]).TypeSpec).Expr;
-		defer delete baseTypeExpression;
-		defer delete constraintExpression;
 		StringView[?] expected = .("typeAttribute", "baseType", "constraint", "fieldInitializer",
 			"methodAttribute", "parameterAttribute", "parameterDefault", "initializer", "argument",
 			"ifCondition", "then", "forInit", "forCondition", "forIncrement", "forBody",
