@@ -309,7 +309,7 @@ static class TestParserRegression
 			Test.Assert(((CharLiteral)formattedExpr).Value == expected[i]);
 		}
 
-		String[?] invalidLiterals = .("''", "'''", "'ab'", @"'\x0'", @"'\u{}'", @"'\u{110000}'", @"'\u{D800}'");
+		String[?] invalidLiterals = .("''", "'''", "'ab'", @"'\x0'", @"'\u{}'", @"'\u{110000}'");
 		for (let literal in invalidLiterals)
 		{
 			let lexer = scope Lexer(literal);

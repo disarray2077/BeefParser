@@ -1181,6 +1181,11 @@ public class CodeGenVisitor : ASTVisitor
 	
 	public override VisitResult Visit(CharLiteral chrConstExpr)
 	{
+		if ((uint32)chrConstExpr.Value >= 0xD800 && (uint32)chrConstExpr.Value <= 0xDFFF)
+		{
+			Write!(scope String()..AppendF("'\\u{{{:X}}}'", (uint32)chrConstExpr.Value));
+			return .Continue;
+		}
 		let escapedStr = chrConstExpr.Value.ToString(.. scope .()).Escape(.. scope .());
 
 		Write!("'");

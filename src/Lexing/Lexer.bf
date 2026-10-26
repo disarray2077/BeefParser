@@ -374,7 +374,7 @@ namespace BeefParser
 						return .Err(_currentChar);
 					StringView digits = .(_text, startPos + 3, hexDigits);
 					uint32 value = uint32.Parse(digits, .Hex);
-					if (value > 0x10FFFF || (value >= 0xD800 && value <= 0xDFFF))
+					if (value > 0x10FFFF)
 						return .Err(_currentChar);
 					advance();
 				default:

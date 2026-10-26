@@ -77,7 +77,13 @@ namespace BeefParser
 
 		public double AsReal()
 		{
-		    return double.Parse(_value);
+			if (_value.Contains('\''))
+			{
+				let value = scope String(_value);
+				value.Replace("'", "");
+				return double.Parse(value);
+			}
+			return double.Parse(_value);
 		}
 
 		public StringView AsText()
