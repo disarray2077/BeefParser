@@ -969,13 +969,28 @@ namespace BeefParser
 					eat!(TokenType.RArrow);
 				}
 
-				// Parse Inheritance
+				// Parse Inheritance or primary constructor
 				if (tryEat!(TokenType.Colon))
 				{
-					Try!(parseInheritance(ref typeDecl.Inheritance));
+					if (let structDecl = typeDecl as StructDecl && _currentToken.Type == .Identifier && _currentToken.AsText() == "this")
+					{
+						eat!(TokenType.Identifier);
+						structDecl.HasPrimaryConstructor = true;
+						eat!(TokenType.LParen);
+						if (_currentToken.Type != .RParen)
+							Try!(parseFormalParameters(ref structDecl.PrimaryConstructorParameters));
+						eat!(TokenType.RParen);
+						if (tryEat!(TokenType.Comma))
+							Try!(parseInheritance(ref typeDecl.Inheritance));
+					}
+					else
+						Try!(parseInheritance(ref typeDecl.Inheritance));
 				}
 
 				TryParse!(parseGenericConstraints(ref typeDecl.GenericConstraints));
+
+				if (let structDecl = typeDecl as StructDecl && structDecl.HasPrimaryConstructor && tryEat!(TokenType.Semi))
+					return .Ok;
 
 				scope TemporaryChange<BaseTypeDecl>(ref _context.Type, decl);
 				eat!(TokenType.LCurly);
@@ -1372,6 +1387,11 @@ namespace BeefParser
 				if (decl.Accessors.IsEmpty)
 					raiseErrorF!(_lastToken.Position, "Property or indexer '{}' must have at least one accessor", decl.Name);
 
+				if (tryEat!(TokenType.Tilde))
+				{
+					Parse!(statement(ref decl.Finalizer, false));
+					eat!(TokenType.Semi);
+				}
 				return .Ok;
 			}
 

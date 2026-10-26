@@ -207,7 +207,7 @@ public class CodeGenVisitor : ASTVisitor
 		}
 		Write!(propertyDecl.Name);
 
-		if (propertyDecl.Accessors.Count == 1 &&
+		if (propertyDecl.Finalizer == null && propertyDecl.Accessors.Count == 1 &&
 			propertyDecl.Accessors[0].AccessorType == .Get &&
 			!propertyDecl.Accessors[0].IsRef && !propertyDecl.Accessors[0].IsMutable &&
 			propertyDecl.Accessors[0].Expr != null)
@@ -270,6 +270,13 @@ public class CodeGenVisitor : ASTVisitor
 			Write!("}", true);
 		}
 
+		if (propertyDecl.Finalizer != null)
+		{
+			Write!(" ~ ");
+			Visit(propertyDecl.Finalizer);
+			if (propertyDecl.Finalizer is CompoundStmt)
+				Write!(";");
+		}
 		BreakLine!();
 
 		return .Continue;
@@ -352,7 +359,15 @@ public class CodeGenVisitor : ASTVisitor
 				BreakLine!();
 		}
 
-		WriteLine!("}", true);
+		Write!("}", true);
+		if (indexerDecl.Finalizer != null)
+		{
+			Write!(" ~ ");
+			Visit(indexerDecl.Finalizer);
+			if (indexerDecl.Finalizer is CompoundStmt)
+				Write!(";");
+		}
+		BreakLine!();
 		BreakLine!();
 
 		return .Continue;
@@ -453,10 +468,21 @@ public class CodeGenVisitor : ASTVisitor
 
 		Write!("struct ");
 		Write!(structDecl.Name);
+		if (structDecl.HasPrimaryConstructor)
+		{
+			Write!(" : this(");
+			for (let param in structDecl.PrimaryConstructorParameters)
+			{
+				if (@param.Index > 0)
+					Write!(", ");
+				WriteParamDecl(param);
+			}
+			Write!(")");
+		}
 
 		if (!structDecl.Inheritance.IsEmpty)
 		{
-			Write!(" : ");
+			Write!(structDecl.HasPrimaryConstructor ? ", " : " : ");
 
 			for (var inh in structDecl.Inheritance)
 			{
