@@ -731,7 +731,7 @@ namespace BeefParser
 		{
 			switch (type)
 			{
-			case .Abstract, .Const, .Extern, .Override, .New, .Partial, .ReadOnly, .Sealed, .Unsafe, .Virtual, .Volatile, .Static:
+			case .Abstract, .Const, .Extern, .Override, .New, .Partial, .ReadOnly, .Sealed, .Unsafe, .Virtual, .Volatile, .Static, .Append:
 				return true;
 			default:
 				return false;
@@ -793,6 +793,10 @@ namespace BeefParser
 					if (result.HasFlag(.Static))
 						raiseErrorF!(_lastToken.Position, "Duplicate modifier '{}'", _lastToken.Type);
 					result |= .Static;
+				case .Append:
+					if (result.HasFlag(.Append))
+						raiseErrorF!(_lastToken.Position, "Duplicate modifier '{}'", _lastToken.Type);
+					result |= .Append;
 				default:
 					Debug.Assert(false, "Unknown switch case");
 				}
@@ -2251,6 +2255,12 @@ namespace BeefParser
 
 				while (TryParse!(parseAttributes(ref attributedExpr.Attributes))) { }
 				Parse!(primaryExpr(ref attributedExpr.Expr));
+				return .Ok;
+			case .Bind:
+				eat!(TokenType.Bind);
+				let binding = new MethodBindingExpr();
+				expr = binding;
+				Parse!(postFixExpr(ref binding.Target));
 				return .Ok;
 			case .InterpolatedStringStart:
 				if (!TryParse!(interpolatedStringExpr(ref expr)))

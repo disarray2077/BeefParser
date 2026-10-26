@@ -14,6 +14,7 @@ namespace BeefParser.AST
 		Unsafe		= 1 << 8,
 		Virtual		= 1 << 9,
 		Volatile	= 1 << 10,
-		Static		= 1 << 11
+		Static		= 1 << 11,
+		Append		= 1 << 12
 	}
 }

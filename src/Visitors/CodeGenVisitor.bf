@@ -1965,6 +1965,13 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 
+	public override VisitResult Visit(MethodBindingExpr binding)
+	{
+		Write!("=> ");
+		Visit(binding.Target);
+		return .Continue;
+	}
+
 	public override VisitResult Visit(AddressOfExpr addrExpr)
 	{
 		Write!("&");
