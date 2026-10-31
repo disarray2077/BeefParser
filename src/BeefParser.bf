@@ -566,9 +566,11 @@ namespace BeefParser
 				spec = new VoidTypeSpec();
 			default:
 				Name name = null;
+				defer { delete name; }
 				if (!TryParse!(parseName(ref name)))
 					return .NotSuitable;
 				spec = name;
+				name = null;
 			}
 
 			defer::
@@ -1614,9 +1616,11 @@ namespace BeefParser
 				int lastTokenIndex = _tokenIndex;
 
 			    Statement tempStmt = null;
+				defer { delete tempStmt; }
 			    if (statement(ref tempStmt, true) case .Ok)
 			    {
 			        decl.Statements.Add(tempStmt);
+					tempStmt = null;
 			        continue;
 			    }
 
@@ -2260,9 +2264,11 @@ namespace BeefParser
 				int lastTokenIndex = _tokenIndex;
 
 		        Statement tempStmt = null;
+				defer { delete tempStmt; }
 		        if (statement(ref tempStmt, true) case .Ok)
 		        {
 		            blockExpr.Statements.Add(tempStmt);
+					tempStmt = null;
 		            continue;
 		        }
 
