@@ -639,9 +639,17 @@ namespace BeefParser
 						  else					return Token(TokenType.BitwiseOr, position);
 				case '^': if (match('='))		return Token(TokenType.BitXorAssign, position);
 						  else					return Token(TokenType.BitwiseXor, position);
-				case '?': if (match('?'))		return Token(TokenType.NullCoarl, position);
-						  else if (match('.'))  return Token(TokenType.NullCond, position);
-						  else					return Token(TokenType.QuestionMark, position);
+				case '?':
+					if (match('?'))
+					{
+						if (match('='))
+							return Token(TokenType.NullCoarlAssign, position);
+						return Token(TokenType.NullCoarl, position);
+					}
+					else if (match('.'))
+						return Token(TokenType.NullCond, position);
+					else
+						return Token(TokenType.QuestionMark, position);
 				case '%': if (match('='))		return Token(TokenType.ModAssign, position);
 						  else					return Token(TokenType.Module, position);
 				case '$': return Token(TokenType.Dollar, position);

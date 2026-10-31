@@ -1009,6 +1009,7 @@ public class CodeGenVisitor : ASTVisitor
 		case .BitAndAssign: return "&=";
 		case .BitOrAssign: return "|=";
 		case .BitXorAssign: return "^=";
+		case .NullCoarlAssign: return "??=";
 		default:
 			Runtime.FatalError("Invalid operator token");
 		}
@@ -1914,6 +1915,8 @@ public class CodeGenVisitor : ASTVisitor
 			Write!("&=");
 		case .BitXorAssign:
 			Write!("^=");
+		case .NullCoarlAssign:
+			Write!("??=");
 		default:
 			Runtime.FatalError("Unknown Token Type");
 		}

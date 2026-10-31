@@ -170,6 +170,7 @@ namespace BeefParser
 		BitAndAssign,	// &=
 		BitXorAssign,	// ^=
 		BitOrAssign,	// |=
+		NullCoarlAssign, // ??=
 		Bind, 		// =>
 		Dollar, 	// $
 		QuestionMark, 	// ?

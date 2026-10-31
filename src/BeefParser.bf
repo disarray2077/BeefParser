@@ -3275,7 +3275,8 @@ namespace BeefParser
 					 tryEat!(TokenType.LShiftAssign) ||
 					 tryEat!(TokenType.BitAndAssign) ||
 					 tryEat!(TokenType.BitXorAssign) ||
-					 tryEat!(TokenType.BitOrAssign))
+					 tryEat!(TokenType.BitOrAssign) ||
+					 tryEat!(TokenType.NullCoarlAssign))
 			{
 				let compAssignOpExpr = new CompoundAssignOpExpr()
 				{
