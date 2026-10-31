@@ -2458,7 +2458,10 @@ namespace BeefParser
 
 		private ParseResult<void> postFixExpr(ref Expression expr)
 		{
-			TryParse!(primaryExpr(ref expr));
+			// Unary constructs such as typeof can already supply the primary expression.
+			// Leave the following token for suffixes or the enclosing operator parser.
+			if (expr == null)
+				TryParse!(primaryExpr(ref expr));
 
 			if (expr == null)
 				return .NotSuitable;

@@ -20,6 +20,40 @@ static class TestFormsSyntax
 	}
 
 	[Test]
+	public static void UnaryConstructsBeforeTernariesRoundTrip()
+	{
+		String[?] expressions = .(
+			"typeof(T) == typeof(void) ? 0 : 1",
+			"0 == sizeof(int32) ? 1 : 0",
+			"default(bool) ? 1 : 0",
+			"typeof(int32).Size == sizeof(int32) ? 1 : 0"
+		);
+		for (let expression in expressions)
+		{
+			let source = scope String("class C { int F<T>() { const int32 results = ");
+			source.Append(expression);
+			source.Append("; return results; } }");
+			RoundTrip(source);
+		}
+	}
+
+	[Test]
+	public static void MalformedTernariesReturnErrorsWithoutCrashing()
+	{
+		String[?] expressions = .("typeof(void) ? ;", "sizeof(int32) ? 1;", "default(bool) ? 1 : ;");
+		for (let expression in expressions)
+		{
+			let source = scope String("class C { void F() { let value = ");
+			source.Append(expression);
+			source.Append(" } }");
+			let parser = scope BeefParser(source);
+			parser.BreakOnError = false;
+			Test.Assert(parser.Parse(let root) case .Err, source);
+			Test.Assert(root == null);
+		}
+	}
+
+	[Test]
 	public static void DeclarationFormsRoundTrip()
 	{
 		String[?] sources = .(
