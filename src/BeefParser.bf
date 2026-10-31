@@ -1691,7 +1691,7 @@ namespace BeefParser
 					raiseError!(_currentToken.Position, "Method return type expected");
 				}
 			}
-			else if (_currentToken.Type == TokenType.Identifier && _nextToken.Type == .LParen)
+			else if (_currentToken.Type == TokenType.Identifier && (_nextToken.Type == .LParen || _nextToken.Type == .LArrow && _currentToken.AsText() == "this"))
 			{
 				if (_currentToken.AsText() == "this")
 				{

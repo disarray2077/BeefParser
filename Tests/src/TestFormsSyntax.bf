@@ -121,6 +121,22 @@ static class TestFormsSyntax
 	}
 
 	[Test]
+	public static void GenericConstructorsRetainTheirTypeParameters()
+	{
+		let parser = scope BeefParser("class C { public this<T>(T value) { } public T Identity<T>(T value) { return value; } }");
+		parser.BreakOnError = false;
+		Test.Assert(parser.Parse(let root) case .Ok);
+		defer delete root;
+		let members = ((ClassDecl)root.Declarations[0]).Declarations;
+		let constructor = (MethodDecl)members[0];
+		Test.Assert(constructor.IsConstructor);
+		Test.Assert(constructor.GenericParametersNames[0] == "T");
+		let method = (MethodDecl)members[1];
+		Test.Assert(!method.IsConstructor);
+		Test.Assert(method.GenericParametersNames[0] == "T");
+	}
+
+	[Test]
 	public static void RejectsIncompleteForms()
 	{
 		String[?] sources = .("class C { bool P { get; set; } = ; }", "class C { void F() { Call(value:); } }", "static { void F( }", "class C { void F() { let f = new =>; } }", "class C { void F() { let f = scope [&] () =>; } }");
