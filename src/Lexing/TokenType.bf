@@ -29,6 +29,7 @@ namespace BeefParser
 		Append,
 		Scope,
 		New,
+		Box,
 		Delete,
 		TypeOf,
 		SizeOf,

@@ -2690,7 +2690,21 @@ namespace BeefParser
 					bind = new .() { Kind = .RootScope };
 				}
 
-				if (_currentToken.Type == .Bind || _currentToken.Type == .LParen || isLambdaCaptureList())
+				if (tryEat!(TokenType.Box))
+				{
+					ensureNull!(expr);
+					let boxing = new BoxOpExpr()
+					{
+						IsScope = isScope,
+						IsAppend = isAppend,
+						Bind = bind
+					};
+					bind = null;
+					expr = boxing;
+					Parse!(expression(ref boxing.Expr));
+					return .Ok;
+				}
+				else if (_currentToken.Type == .Bind || _currentToken.Type == .LParen || isLambdaCaptureList())
 				{
 					ensureNull!(expr);
 					let allocation = new NewLambdaOpExpr()

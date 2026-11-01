@@ -1812,6 +1812,14 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 
+	public override VisitResult Visit(BoxOpExpr node)
+	{
+		WriteAllocationPrefix(node.IsScope, node.IsAppend, node.Bind);
+		Write!(" box ");
+		Visit(node.Expr);
+		return .Continue;
+	}
+
 	public override VisitResult Visit(NewOpExpr newOpExpr)
 	{
 		if (newOpExpr.IsScope || newOpExpr.IsAppend || !newOpExpr.IsInplace)
