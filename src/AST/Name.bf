@@ -29,6 +29,7 @@ namespace BeefParser.AST
 	[ImplementAccept, ImplementToString]
 	class GenericName : SimpleName
 	{
+		public bool IsUnbound;
 		public List<TypeSpec> TypeArguments = new .() ~ Release!(_);
 	}
 	

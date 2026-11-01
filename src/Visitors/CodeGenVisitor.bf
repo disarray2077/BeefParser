@@ -2244,6 +2244,14 @@ public class CodeGenVisitor : ASTVisitor
 	public override VisitResult Visit(GenericName node)
 	{
 		Write!(node.Identifier);
+		if (node.IsUnbound)
+		{
+			Write!("<");
+			for (int i = 1; i < node.TypeArguments.Count; i++)
+				Write!(",");
+			Write!(">");
+			return .Continue;
+		}
 
 		if (!node.TypeArguments.IsEmpty)
 		{

@@ -305,7 +305,14 @@ namespace BeefParser
 				};
 				name = genericName;
 
-				Try!(parseGenericParameters(ref genericName.TypeArguments));
+				if (_currentToken.Type == .RArrow || _currentToken.Type == .Comma)
+				{
+					genericName.IsUnbound = true;
+					repeat { genericName.TypeArguments.Add(null); }
+					while (tryEat!(TokenType.Comma));
+				}
+				else
+					Try!(parseGenericParameters(ref genericName.TypeArguments));
 				eat!(TokenType.RArrow);
 			}
 			else
@@ -347,7 +354,11 @@ namespace BeefParser
 
 			if (tryEat!(TokenType.LArrow))
 			{
-				repeat
+				if (_currentToken.Type == .RArrow || _currentToken.Type == .Comma)
+				{
+					while (tryEat!(TokenType.Comma)) { }
+				}
+				else repeat
 				{
 					if (!TryParse!(checkTypeSpec()))
 						return .NotSuitable;
