@@ -2608,6 +2608,11 @@ namespace BeefParser
 		{
 			if (_currentToken.Type == .LParen)
 			{
+				// Prefer a lambda for ambiguous forms such as `(T) => value`.
+				// Function-type casts such as `(function void()) => T.VoidCall` still reach cast parsing.
+				if (TryParse!(lambdaOpExpr(ref expr, true)))
+					return postFixExpr(ref expr);
+
 				let tokenIndexBkp = _tokenIndex;
 
 				eat!(TokenType.LParen);
