@@ -4,7 +4,6 @@ namespace BeefParser
 	{
 		// Keywords
 		Void,
-	    Object,
 	    Bool,
 
 		Char,
@@ -107,7 +106,6 @@ namespace BeefParser
 		Operator,
 		Delegate,
 		Function,
-		Event,
 
 		// Literals
 	    IntegerLiteral,

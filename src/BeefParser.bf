@@ -237,7 +237,7 @@ namespace BeefParser
 		{
 			switch (type)
 			{
-			case .Void, .Object, .Bool, .Char, .Byte, .SByte, .Short, .UShort, .Int, .UInt, .Long, .ULong, .Float, .Double, .Decimal, .String:
+			case .Void, .Bool, .Char, .Byte, .SByte, .Short, .UShort, .Int, .UInt, .Long, .ULong, .Float, .Double, .Decimal, .String:
 				return true;
 			default:
 				return false;
