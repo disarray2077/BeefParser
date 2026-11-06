@@ -1428,7 +1428,7 @@ public class CodeGenVisitor : ASTVisitor
 		{
 			Visit(foreachStmt.TargetType);
 			Write!(" ");
-			Write!(foreachStmt.TargetName);
+			Visit(foreachStmt.Binding);
 			Write!(" in ");
 		}
 		Visit(foreachStmt.SourceExpr);

@@ -3506,6 +3506,26 @@ namespace BeefParser
 			return .NotSuitable;
 		}
 
+		private bool isTupleForeachBinding()
+		{
+			if ((_currentToken.Type != .Let && _currentToken.Type != .Var) || _nextToken.Type != .LParen)
+				return false;
+
+			for (int index = _tokenIndex + 2; index < _tokens.Count; index++)
+			{
+				switch (_tokens[index].Type)
+				{
+				case .Identifier, .Comma:
+					continue;
+				case .RParen:
+					return index + 1 < _tokens.Count && _tokens[index + 1].Type == .In;
+				default:
+					return false;
+				}
+			}
+			return false;
+		}
+
 		private ParseResult<void> forStmt(ref Statement stmt)
 		{
 			if (tryEat!(TokenType.For) || tryEat!(TokenType.Foreach))
@@ -3517,6 +3537,29 @@ namespace BeefParser
 
 				if (!tryEat!(TokenType.Semi))
 				{
+					if (isTupleForeachBinding())
+					{
+						let loop = new ForeachStmt();
+						stmt = loop;
+						Parse!(typeSpec(ref loop.TargetType));
+						let binding = new TupleExpr();
+						loop.Binding = binding;
+						eat!(TokenType.LParen);
+						repeat
+						{
+							Expression name = null;
+							Parse!(identifierExpr(ref name));
+							binding.Elements.Add(name);
+						}
+						while (tryEat!(TokenType.Comma) && _currentToken.Type != .RParen);
+						eat!(TokenType.RParen);
+						eat!(TokenType.In);
+						Parse!(expression(ref loop.SourceExpr));
+						eat!(TokenType.RParen);
+						Parse!(statement(ref loop.Body, true));
+						return .Ok;
+					}
+
 					VariableDecl declaration = null;
 					if (!TryParse!(variableDecl(ref declaration)))
 					{
@@ -3583,8 +3626,7 @@ namespace BeefParser
 
 							Parse!(typeSpec(ref foreachStmt.TargetType));
 
-							eat!(TokenType.Identifier);
-							foreachStmt.TargetName = _lastToken.AsText();
+							Parse!(identifierExpr(ref foreachStmt.Binding));
 							
 							eat!(TokenType.In);
 

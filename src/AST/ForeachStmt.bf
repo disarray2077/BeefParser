@@ -8,14 +8,8 @@ namespace BeefParser.AST
 	{
 		public bool IsAnonymous = false; // for (collection) without an explicit iteration variable.
 		public TypeSpec TargetType ~ delete _;
-		private String mTargetName ~ delete _;
+		public Expression Binding ~ delete _;
 		public Expression SourceExpr ~ delete _;
 		public Statement Body ~ delete _;
-
-		public StringView TargetName
-		{
-			get => mTargetName;
-			set => String.NewOrSet!(mTargetName, value);
-		}
 	}
 }

@@ -112,7 +112,7 @@ static class TestParserRegression
 		let foreachStmt = (ForeachStmt)((CompoundStmt)method.CompoundStmt).Statements[0];
 		Test.Assert(foreachStmt.IsAnonymous);
 		Test.Assert(foreachStmt.TargetType == null);
-		Test.Assert(foreachStmt.TargetName.IsEmpty);
+		Test.Assert(foreachStmt.Binding == null);
 		Test.Assert(foreachStmt.SourceExpr.ToString(.. scope .()) == "this.Split(separator)");
 		let code = root.ToString(.. scope .());
 		Test.Assert(code.Contains("for (this.Split(separator))"));
