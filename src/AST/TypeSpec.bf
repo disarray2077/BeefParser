@@ -67,6 +67,7 @@ namespace BeefParser.AST
 	class ConstArgumentTypeSpec : TypeSpec
 	{
 		public Expression Value ~ delete _;
+		public bool IsExplicit = true;
 	}
 	
 	[ImplementAccept, ImplementToString]

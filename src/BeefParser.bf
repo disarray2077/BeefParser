@@ -316,6 +316,22 @@ namespace BeefParser
 			return expression(ref expr);
 		}
 
+		private bool isNegativeNumericLiteral()
+			=> _currentToken.Type == .Minus && (_nextToken.Type == .IntegerLiteral ||
+				_nextToken.Type == .FloatLiteral || _nextToken.Type == .DoubleLiteral);
+
+		private ParseResult<void> inferredGenericLiteral(ref Expression expr)
+		{
+			if (!isNegativeNumericLiteral())
+				return constantExpr(ref expr);
+
+			eat!(TokenType.Minus);
+			let negative = new UnaryOpExpr() { Operation = .Minus };
+			expr = negative;
+			Parse!(constantExpr(ref negative.Right));
+			return .Ok;
+		}
+
 		private Result<void> parseGenericParameters(ref List<TypeSpec> types)
 		{
 			repeat
@@ -330,11 +346,15 @@ namespace BeefParser
 				// We do this to make sure even the errored TypeSpec gets deleted with the parent node.
 				TypeSpec* spec = types.GrowUninitialized(1);
 				*spec = null;
-				if (tryEat!(TokenType.Const))
+				bool explicitConst = tryEat!(TokenType.Const);
+				if (explicitConst || isConstant(_currentToken.Type) || isNegativeNumericLiteral())
 				{
-					let argument = new ConstArgumentTypeSpec();
+					let argument = new ConstArgumentTypeSpec() { IsExplicit = explicitConst };
 					*spec = argument;
-					Parse!(genericArgumentExpression(ref argument.Value));
+					if (explicitConst)
+						Parse!(genericArgumentExpression(ref argument.Value));
+					else
+						Parse!(inferredGenericLiteral(ref argument.Value));
 				}
 				else
 					Parse!(typeSpec(ref *spec));
@@ -413,7 +433,14 @@ namespace BeefParser
 				}
 				else repeat
 				{
-					if (!TryParse!(checkTypeSpec()))
+					if (isConstant(_currentToken.Type) || isNegativeNumericLiteral())
+					{
+						Expression literal = null;
+						defer { delete literal; }
+						if (!TryParse!(inferredGenericLiteral(ref literal)))
+							return .NotSuitable;
+					}
+					else if (!TryParse!(checkTypeSpec()))
 						return .NotSuitable;
 				}
 				while (tryEat!(TokenType.Comma));

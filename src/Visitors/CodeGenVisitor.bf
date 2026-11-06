@@ -2231,7 +2231,15 @@ public class CodeGenVisitor : ASTVisitor
 
 	public override VisitResult Visit(ConstArgumentTypeSpec node)
 	{
-		Write!("const ");
+		if (node.IsExplicit)
+			Write!("const ");
+		if ((let negative = node.Value as UnaryOpExpr) && negative.Operation == .Minus &&
+			(negative.Right is IntLiteral || negative.Right is RealLiteral))
+		{
+			Write!("-");
+			Visit(negative.Right);
+			return .Continue;
+		}
 		// Preserve expression grouping when an operator could be a generic delimiter.
 		let needsParens = !(node.Value is Literal) && !(node.Value is IdentifierExpr);
 		if (needsParens) Write!("(");
