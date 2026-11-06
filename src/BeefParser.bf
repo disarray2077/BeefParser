@@ -1206,7 +1206,9 @@ namespace BeefParser
 
 			if (TryParse!(variableDecl(ref varDecl, true)))
 			{
-				if (!tryEat!(TokenType.Semi))
+				let finalizer = varDecl.Variables.Back.Finalizer;
+				if (!tryEat!(TokenType.Semi) &&
+					!(finalizer != null && (_lastToken.Type == .RCurly || _lastToken.Type == .Semi)))
 					raiseErrorF!(_currentToken.Position, "Expected \"Semi\" got \"{}\"", _currentToken.Type);
 				
 				rollback.Cancel();

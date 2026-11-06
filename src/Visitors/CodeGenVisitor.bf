@@ -404,7 +404,8 @@ public class CodeGenVisitor : ASTVisitor
 				Write!(", ");
 		}
 
-		Write!(";");
+		if (varDecl.Variables.Back.Finalizer == null)
+			Write!(";");
 		return .Continue;
 	}
 	
