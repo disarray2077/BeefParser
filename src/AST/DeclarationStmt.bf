@@ -6,6 +6,7 @@ namespace BeefParser.AST
 	class DeclarationStmt : Statement
 	{
 		public bool IsConst;
+		public bool IsStatic;
 		public VariableDecl Declaration ~ Release!(_);
 	}
 }

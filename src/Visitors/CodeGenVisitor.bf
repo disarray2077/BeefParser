@@ -1292,6 +1292,10 @@ public class CodeGenVisitor : ASTVisitor
 
 	public override VisitResult Visit(DeclarationStmt declStmt)
 	{
+		if (declStmt.IsStatic)
+			Write!("static ");
+		if (declStmt.IsConst)
+			Write!("const ");
 		Write!(declStmt.Declaration.Specification.ToString(.. scope .()));
 		Write!(" ");
 

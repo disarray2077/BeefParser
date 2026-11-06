@@ -3838,6 +3838,7 @@ namespace BeefParser
 					_lastFailureIndex = _tokenIndex;
 			}
 
+			bool isStatic = tryEat!(TokenType.Static);
 			bool isConst = tryEat!(TokenType.Const);
 
 			let tokenIndexBkp = _tokenIndex;
@@ -3864,6 +3865,7 @@ namespace BeefParser
 				let declStmt = new DeclarationStmt()
 				{
 					IsConst = isConst,
+					IsStatic = isStatic,
 					Declaration = new VariableDecl()
 					{
 						Specification = typeSpec
