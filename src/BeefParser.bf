@@ -1008,6 +1008,11 @@ namespace BeefParser
 				Try!(parseModifier(ref modifier));
 			}
 
+			if (!isInline && (_currentToken.Type == .Struct || _currentToken.Type == .Class ||
+				_currentToken.Type == .Enum || _currentToken.Type == .Interface) &&
+				(_nextToken.Type == .LCurly || _nextToken.Type == .Colon))
+				return .NotSuitable;
+
 			BaseTypeDecl decl = null;
 
 			if (tryEat!(TokenType.Interface))
@@ -1305,6 +1310,12 @@ namespace BeefParser
 					raiseErrorF!(_currentToken.Position, "Expected \"Semi\" got \"{}\"", _currentToken.Type);
 				
 				rollback.Cancel();
+
+				if (let inlineType = varDecl.Specification as InlineTypeSpec)
+				{
+					inlineType.Declaration.Attributes.AddRange(attrs);
+					attrs.Clear();
+				}
 
 				FieldDecl fieldDecl = new .()
 				{
