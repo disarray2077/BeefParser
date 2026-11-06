@@ -1577,6 +1577,8 @@ namespace BeefParser
 						decl.Constraints.Add(new StructConstraint() { IsPointer = tryEat!(TokenType.Mul) });
 					else if (tryEat!(TokenType.Class))
 						decl.Constraints.Add(new ClassConstraint());
+					else if (tryEat!(TokenType.Enum))
+						decl.Constraints.Add(new EnumConstraint());
 					else if (tryEat!(TokenType.Default))
 						decl.Constraints.Add(new DefaultConstraint());
 					else if (tryEat!(TokenType.New))

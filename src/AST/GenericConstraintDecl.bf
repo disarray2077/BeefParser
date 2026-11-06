@@ -14,6 +14,12 @@ namespace BeefParser.AST
 		public override StringView Text => "const";
 	}
 
+	[ImplementAccept, ImplementToString]
+	class EnumConstraint : TypeParameterConstraint
+	{
+		public override StringView Text => "enum";
+	}
+
 	abstract class ClassOrStructConstraint : TypeParameterConstraint
 	{
 	}

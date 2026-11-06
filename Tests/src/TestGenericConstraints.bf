@@ -84,4 +84,19 @@ static class TestGenericConstraints
 		Test.Assert(roundTrip.Parse(let formattedRoot) case .Ok);
 		defer delete formattedRoot;
 	}
+
+	[Test]
+	public static void EnumConstraintsRoundTrip()
+	{
+		let parser = scope BeefParser("class Example { void Bind<T>() where T : enum {} }");
+		Test.Assert(parser.Parse(let root) case .Ok);
+		defer delete root;
+		let method = (MethodDecl)((ClassDecl)root.Declarations[0]).Declarations[0];
+		Test.Assert(method.GenericConstraints[0].Constraints[0] is EnumConstraint);
+		let code = root.ToString(.. scope .());
+		Test.Assert(code.Contains("where T : enum"));
+		let roundTrip = scope BeefParser(code);
+		Test.Assert(roundTrip.Parse(let formattedRoot) case .Ok);
+		defer delete formattedRoot;
+	}
 }
