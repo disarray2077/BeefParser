@@ -3,7 +3,7 @@ using BeefParser.AST;
 
 namespace BeefParser.Tests;
 
-static class TestConstConstraint
+static class TestGenericConstraints
 {
 	[Test]
 	public static void ConstConstraintSpacingIsPreservedAcrossDeclarationKinds()
@@ -53,5 +53,20 @@ static class TestConstConstraint
 		let formattedMethod = (MethodDecl)((ClassDecl)formattedRoot.Declarations[0]).Declarations[0];
 		Test.Assert(formattedMethod.GenericConstraints[0].Constraints[0] is ConstConstraint);
 		Test.Assert(((TypeConstraint)formattedMethod.GenericConstraints[1].Constraints[1]).TypeSpec.ToString(.. scope .()) == "int");
+	}
+
+	[Test]
+	public static void PointerConstraintsRetainTheirKinds()
+	{
+		let parser = scope BeefParser("class Example { void Bind<T>() where T : var, struct* {} }");
+		Test.Assert(parser.Parse(let root) case .Ok);
+		defer delete root;
+		let method = (MethodDecl)((ClassDecl)root.Declarations[0]).Declarations[0];
+		Test.Assert(((StructConstraint)method.GenericConstraints[0].Constraints[1]).IsPointer);
+		let code = root.ToString(.. scope .());
+		Test.Assert(code.Contains("where T : var, struct*"));
+		let roundTrip = scope BeefParser(code);
+		Test.Assert(roundTrip.Parse(let formattedRoot) case .Ok);
+		defer delete formattedRoot;
 	}
 }

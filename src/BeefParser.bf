@@ -1520,7 +1520,7 @@ namespace BeefParser
 				repeat
 				{
 					if (tryEat!(TokenType.Struct))
-						decl.Constraints.Add(new StructConstraint());
+						decl.Constraints.Add(new StructConstraint() { IsPointer = tryEat!(TokenType.Mul) });
 					else if (tryEat!(TokenType.Class))
 						decl.Constraints.Add(new ClassConstraint());
 					else if (tryEat!(TokenType.Default))

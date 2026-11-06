@@ -27,7 +27,8 @@ namespace BeefParser.AST
 	[ImplementAccept, ImplementToString]
 	class StructConstraint : ClassOrStructConstraint
 	{
-		public override StringView Text => "struct";
+		public bool IsPointer;
+		public override StringView Text => IsPointer ? "struct*" : "struct";
 	}
 	
 	[ImplementAccept, ImplementToString]
