@@ -609,7 +609,7 @@ public class CodeGenVisitor : ASTVisitor
 					else
 						Write!(constraint.Text);
 					if (@constraint.Index != constraintDecl.Constraints.Count - 1)
-						Write!(", ");
+						Write!((constraint is ConstConstraint) ? " " : ", ");
 				}
 			}
 		}
@@ -758,7 +758,7 @@ public class CodeGenVisitor : ASTVisitor
 					}
 
 					if (idx != constraintDecl.Constraints.Count - 1)
-						Write!(", ");
+						Write!((paramConstraint is ConstConstraint) ? " " : ", ");
 				}
 			}
 		}
@@ -939,7 +939,7 @@ public class CodeGenVisitor : ASTVisitor
 						}
 
 						if (idx != constraintDecl.Constraints.Count - 1)
-							Write!(", ");
+							Write!((paramConstraint is ConstConstraint) ? " " : ", ");
 					}
 				}
 
@@ -1145,7 +1145,7 @@ public class CodeGenVisitor : ASTVisitor
 						}
 
 						if (idx != constraintDecl.Constraints.Count - 1)
-							Write!(", ");
+							Write!((paramConstraint is ConstConstraint) ? " " : ", ");
 					}
 				}
 

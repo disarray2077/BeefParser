@@ -1541,9 +1541,11 @@ namespace BeefParser
 					}
 					else
 					{
+						if (tryEat!(TokenType.Const))
+							decl.Constraints.Add(new ConstConstraint());
+
 						TypeConstraint typeConstraint = new TypeConstraint();
 						decl.Constraints.Add(typeConstraint);
-
 						Parse!(typeSpec(ref typeConstraint.TypeSpec));
 					}
 				}

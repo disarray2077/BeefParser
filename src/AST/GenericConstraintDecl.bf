@@ -8,6 +8,12 @@ namespace BeefParser.AST
 		public virtual StringView Text => String.Empty;
 	}
 
+	[ImplementAccept, ImplementToString]
+	class ConstConstraint : TypeParameterConstraint
+	{
+		public override StringView Text => "const";
+	}
+
 	abstract class ClassOrStructConstraint : TypeParameterConstraint
 	{
 	}
