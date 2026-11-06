@@ -1095,16 +1095,17 @@ public class CodeGenVisitor : ASTVisitor
 			Write!(">");
 		}
 
-		Write!("(");
-
-		for (var param in methodDecl.FormalParameters)
+		if (!methodDecl.IsConstructorBlock)
 		{
-			WriteParamDecl(param);
-			if (@param.Index != methodDecl.FormalParameters.Count - 1)
-				Write!(", ");
+			Write!("(");
+			for (var param in methodDecl.FormalParameters)
+			{
+				WriteParamDecl(param);
+				if (@param.Index != methodDecl.FormalParameters.Count - 1)
+					Write!(", ");
+			}
+			Write!(")");
 		}
-
-		Write!(")");
 
 		if (methodDecl.IsMutable)
 			Write!(" mut");

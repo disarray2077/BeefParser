@@ -1706,7 +1706,8 @@ namespace BeefParser
 					raiseError!(_currentToken.Position, "Method return type expected");
 				}
 			}
-			else if (_currentToken.Type == TokenType.Identifier && (_nextToken.Type == .LParen || _nextToken.Type == .LArrow && _currentToken.AsText() == "this"))
+			else if (_currentToken.Type == TokenType.Identifier && (_nextToken.Type == .LParen ||
+				_currentToken.AsText() == "this" && (_nextToken.Type == .LArrow || _nextToken.Type == .LCurly)))
 			{
 				if (_currentToken.AsText() == "this")
 				{
@@ -1755,7 +1756,8 @@ namespace BeefParser
 			bool isMethod = false;
 			if (!isOperator)
 			{
-				isMethod = _nextToken.Type == .LParen || _nextToken.Type == .LArrow || _nextToken.Type == .Dot;
+				isMethod = _nextToken.Type == .LParen || _nextToken.Type == .LArrow || _nextToken.Type == .Dot ||
+					isConstructor && _nextToken.Type == .LCurly;
 			}
 			else
 			{
@@ -1781,6 +1783,7 @@ namespace BeefParser
 					OperatorType = opType
 				};
 				declaration = decl;
+				decl.IsConstructorBlock = isConstructor && _nextToken.Type == .LCurly;
 
 				if (!isOperator)
 				{

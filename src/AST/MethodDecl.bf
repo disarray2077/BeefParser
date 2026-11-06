@@ -15,6 +15,7 @@ namespace BeefParser.AST
 		public List<ParamDecl> FormalParameters = new .() ~ Release!(_);
 		public ASTNode Body ~ delete _; // CompoundStmt or Expression
 		public bool IsConstructor;
+		public bool IsConstructorBlock;
 		public bool IsDestructor;
 		public bool IsOperator;
 		public bool IsMutable;
