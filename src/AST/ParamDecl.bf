@@ -8,6 +8,7 @@ namespace BeefParser.AST
 	{
 		public List<AttributeSpec> Attributes ~ Release!(_);
 		public bool IsIn;
+		public bool IsMutable;
 		public bool IsExtensionThis;
 		public bool IsOut;
 		public bool IsRef;

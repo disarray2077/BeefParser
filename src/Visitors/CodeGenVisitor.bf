@@ -810,6 +810,8 @@ public class CodeGenVisitor : ASTVisitor
 
 		if (paramDecl.IsExtensionThis)
 			Write!("this ");
+		if (paramDecl.IsMutable)
+			Write!("mut ");
 		if (paramDecl.IsIn)
 			Write!("in ");
 		else if (paramDecl.IsOut)

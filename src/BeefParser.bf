@@ -1205,6 +1205,7 @@ namespace BeefParser
 				eat!(TokenType.Identifier);
 				paramDecl.IsExtensionThis = true;
 			}
+			paramDecl.IsMutable = tryEat!(TokenType.Mut);
 			if (tryEat!(TokenType.In))
 				paramDecl.IsIn = true;
 			else if (tryEat!(TokenType.Out))
