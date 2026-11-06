@@ -1505,17 +1505,10 @@ namespace BeefParser
 
 			repeat
 			{
-				eat!(isReservedType(_currentToken.Type) ? _currentToken.Type : TokenType.Identifier);
-
-				var targetStr = _lastToken.AsText();
-	
-				eat!(TokenType.Colon);
-
-				GenericConstraintDecl decl = new .()
-				{
-					Target = targetStr
-				};
+				let decl = new GenericConstraintDecl();
 				constraints.Add(decl);
+				Parse!(typeSpec(ref decl.TargetType));
+				eat!(TokenType.Colon);
 
 				repeat
 				{

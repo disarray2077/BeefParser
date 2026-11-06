@@ -591,7 +591,7 @@ public class CodeGenVisitor : ASTVisitor
 			{
 				BreakLine!();
 				Write!("where ", true);
-				Write!(constraintDecl.Target);
+				Visit(constraintDecl.TargetType);
 				Write!(" : ");
 				for (let constraint in constraintDecl.Constraints)
 				{
@@ -743,7 +743,7 @@ public class CodeGenVisitor : ASTVisitor
 			for (let constraintDecl in delDecl.GenericConstraints)
 			{
 				Write!("where ", true);
-				Write!(constraintDecl.Target);
+				Visit(constraintDecl.TargetType);
 				Write!(" : ");
 				for (int idx = 0; idx < constraintDecl.Constraints.Count; idx++)
 				{
@@ -924,7 +924,7 @@ public class CodeGenVisitor : ASTVisitor
 				for (let constraintDecl in mixinDecl.GenericConstraints)
 				{
 					Write!("where ", true);
-					Write!(constraintDecl.Target);
+					Visit(constraintDecl.TargetType);
 					Write!(" : ");
 					for (int idx = 0; idx < constraintDecl.Constraints.Count; idx++)
 					{
@@ -1130,7 +1130,7 @@ public class CodeGenVisitor : ASTVisitor
 				for (let constraintDecl in methodDecl.GenericConstraints)
 				{
 					Write!("where ", true);
-					Write!(constraintDecl.Target);
+					Visit(constraintDecl.TargetType);
 					Write!(" : ");
 					for (int idx = 0; idx < constraintDecl.Constraints.Count; idx++)
 					{

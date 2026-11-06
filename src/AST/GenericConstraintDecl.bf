@@ -66,13 +66,7 @@ namespace BeefParser.AST
 	[ImplementAccept, ImplementToString]
 	class GenericConstraintDecl : ASTNode
 	{
-		public String mTarget ~ delete _;
+		public TypeSpec TargetType ~ delete _;
 		public List<TypeParameterConstraint> Constraints = new .() ~ Release!(_);
-
-		public StringView Target
-		{
-			get => mTarget;
-			set => String.NewOrSet!(mTarget, value);
-		}
 	}
 }

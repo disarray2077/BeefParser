@@ -55,7 +55,7 @@ static class TestParserRegression
 		Test.Assert(okCase.Parameters[0].Specification.ToString(.. scope .()) == "T");
 		Test.Assert(okCase.Parameters[0].Name == "value");
 		Test.Assert(((EnumCaseDecl)formattedResult.Declarations[1]).Items[0].Name == "Err");
-		Test.Assert(formattedResult.GenericConstraints[0].Target == "T");
+		Test.Assert(formattedResult.GenericConstraints[0].TargetType.ToString(.. scope .()) == "T");
 		Test.Assert(formattedResult.GenericConstraints[0].Constraints[0] is StructConstraint);
 		Test.Assert(((TypeConstraint)formattedResult.GenericConstraints[0].Constraints[1]).TypeSpec.ToString(.. scope .()) == "IHashable");
 
@@ -67,7 +67,7 @@ static class TestParserRegression
 		Test.Assert(binaryConstraint.Operation == .Plus);
 		Test.Assert(binaryConstraint.Left.ToString(.. scope .()) == "T");
 		Test.Assert(binaryConstraint.Right.ToString(.. scope .()) == "T");
-		Test.Assert(formattedPair.GenericConstraints[1].Target == "U");
+		Test.Assert(formattedPair.GenericConstraints[1].TargetType.ToString(.. scope .()) == "U");
 		Test.Assert(formattedPair.GenericConstraints[1].Constraints[0] is ClassConstraint);
 		let pairCases = (EnumCaseDecl)formattedPair.Declarations[0];
 		Test.Assert(pairCases.Items.Count == 2);
