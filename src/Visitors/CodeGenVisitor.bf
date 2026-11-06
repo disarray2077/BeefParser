@@ -2240,6 +2240,12 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 
+	public override VisitResult Visit(InlineTypeSpec node)
+	{
+		Visit(node.Declaration);
+		return .Continue;
+	}
+
 	public override VisitResult Visit(DelegateTypeSpec node)
 	{
 		Write!(node.Type == .Delegate ? "delegate " : "function ");

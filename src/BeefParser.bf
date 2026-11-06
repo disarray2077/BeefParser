@@ -448,6 +448,10 @@ namespace BeefParser
 
 			switch (_currentToken.Type)
 			{
+			case .Enum, .Struct, .Class, .Interface, .LBracket:
+				TypeSpec inlineSpec = null;
+				defer { delete inlineSpec; }
+				return typeSpec(ref inlineSpec);
 			case .Const:
 				eat!(TokenType.Const);
 				Expression value = null;
@@ -548,12 +552,37 @@ namespace BeefParser
 			return .Ok;
 		}
 
+		private ParseResult<void> inlineTypeSpec(ref TypeSpec spec)
+		{
+			let inlineSpec = new InlineTypeSpec();
+			spec = inlineSpec;
+			List<Declaration> declarations = scope .();
+			defer { ClearAndDeleteItems!(declarations); }
+			scope TemporaryChange<bool>(ref _usingAllowed, _usingAllowed);
+			let result = typeDecl(ref declarations, false, true);
+			if (!declarations.IsEmpty)
+			{
+				inlineSpec.Declaration = (BaseTypeDecl)declarations[0];
+				declarations.Clear();
+			}
+			if (result case .NotSuitable)
+			{
+				DeleteAndNullify!(spec);
+				return .NotSuitable;
+			}
+			Parse!(result);
+			return .Ok;
+		}
+
 		private ParseResult<void> typeSpec(ref TypeSpec spec)
 		{
 			bool isRef = tryEat!(TokenType.Ref);
 
 			switch (_currentToken.Type)
 			{
+			case .Enum, .Struct, .Class, .Interface, .LBracket:
+				if (!TryParse!(inlineTypeSpec(ref spec)))
+					return .NotSuitable;
 			case .Var:
 				eat!(_currentToken.Type);
 				spec = new VarTypeSpec();
@@ -950,7 +979,7 @@ namespace BeefParser
 			return .Ok;
 		}
 
-		private ParseResult<void> typeDecl(ref List<Declaration> decls, bool isNamespace)
+		private ParseResult<void> typeDecl(ref List<Declaration> decls, bool isNamespace, bool isInline = false)
 		{
 			ScopedValueRollback<int> rollback = scope .(ref _tokenIndex);
 
@@ -1024,11 +1053,14 @@ namespace BeefParser
 			decls.Add(decl);
 			
 			decl.Attributes = attrs;
-			decl.AccessLevel = decl.AccessLevel == .Undefined ? .Public : level;
+			decl.AccessLevel = isInline ? level : (decl.AccessLevel == .Undefined ? .Public : level);
 			decl.Modifiers = modifier;
 
-			eat!(TokenType.Identifier);
-			decl.Name = _lastToken.AsText();
+			if (!isInline || _currentToken.Type == .Identifier)
+			{
+				eat!(TokenType.Identifier);
+				decl.Name = _lastToken.AsText();
+			}
 
 			if (isNamespace)
 			{
@@ -1990,6 +2022,7 @@ namespace BeefParser
 		    repeat
 		    {
 		        var item = new EnumCaseItem();
+		        caseDecl.Items.Add(item);
 
 		        eat!(TokenType.Identifier);
 		        item.Name = _lastToken.AsText();
@@ -2000,9 +2033,6 @@ namespace BeefParser
 		                Try!(parseFormalParameters(ref item.Parameters));
 		            eat!(TokenType.RParen);
 		        }
-
-		        caseDecl.Items.Add(item);
-
 		    } while (tryEat!(TokenType.Comma));
 
 		    eat!(TokenType.Semi);

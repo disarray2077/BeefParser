@@ -30,6 +30,12 @@ namespace BeefParser.AST
 	{
 	}
 
+	[ImplementAccept, ImplementToString]
+	class InlineTypeSpec : TypeSpec
+	{
+		public BaseTypeDecl Declaration ~ delete _;
+	}
+
 	abstract class ElementedTypeSpec : TypeSpec
 	{
 		public TypeSpec Element ~ delete _;
