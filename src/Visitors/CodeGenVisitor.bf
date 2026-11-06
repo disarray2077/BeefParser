@@ -497,6 +497,11 @@ public class CodeGenVisitor : ASTVisitor
 
 		Write!("struct ");
 		Write!(structDecl.Name);
+		if (structDecl.IsOpaque)
+		{
+			WriteLine!(";");
+			return .Continue;
+		}
 		if (structDecl.HasPrimaryConstructor)
 		{
 			Write!(" : this(");

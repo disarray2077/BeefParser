@@ -1070,8 +1070,11 @@ namespace BeefParser
 
 				TryParse!(parseGenericConstraints(ref typeDecl.GenericConstraints));
 
-				if (let structDecl = typeDecl as StructDecl && structDecl.HasPrimaryConstructor && tryEat!(TokenType.Semi))
+				if (let structDecl = typeDecl as StructDecl && tryEat!(TokenType.Semi))
+				{
+					structDecl.IsOpaque = !structDecl.HasPrimaryConstructor;
 					return .Ok;
+				}
 
 				scope TemporaryChange<BaseTypeDecl>(ref _context.Type, decl);
 				eat!(TokenType.LCurly);

@@ -7,6 +7,7 @@ namespace BeefParser.AST
 	class StructDecl : TypeDecl
 	{
 		public bool HasPrimaryConstructor;
+		public bool IsOpaque;
 		public List<ParamDecl> PrimaryConstructorParameters = new .() ~ Release!(_);
 	}
 }
