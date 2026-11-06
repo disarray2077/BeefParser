@@ -1620,6 +1620,8 @@ public class CodeGenVisitor : ASTVisitor
 			Write!("+");
 		case .Minus:
 			Write!("-");
+		case .BitwiseXor:
+			Write!("^");
 		case .Not:
 			Write!("!");
 		case .Tilde:

@@ -2937,6 +2937,7 @@ namespace BeefParser
 			}
 			else if (tryEat!(TokenType.Plus) ||
 			    tryEat!(TokenType.Minus) ||
+				tryEat!(TokenType.BitwiseXor) || // From-end index
 				tryEat!(TokenType.Not) ||
 				tryEat!(TokenType.Tilde) || // BitwiseNot
 			    tryEat!(TokenType.Increment) ||
