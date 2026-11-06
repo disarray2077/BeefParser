@@ -1665,6 +1665,28 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 
+	public override VisitResult Visit(DynamicCastExpr node)
+	{
+		let needsParens = node.Target is DynamicCastExpr;
+		if (needsParens) Write!("(");
+		Visit(node.Target);
+		if (needsParens) Write!(")");
+		Write!(" as ");
+		Visit(node.TypeSpec);
+		return .Continue;
+	}
+
+	public override VisitResult Visit(CheckTypeExpr node)
+	{
+		let needsParens = node.Target is DynamicCastExpr;
+		if (needsParens) Write!("(");
+		Visit(node.Target);
+		if (needsParens) Write!(")");
+		Write!(" is ");
+		Visit(node.TypeSpec);
+		return .Continue;
+	}
+
 	public override VisitResult Visit(ComparisonOpExpr compOpExpr)
 	{
 		Visit(compOpExpr.Left);
@@ -1687,10 +1709,6 @@ public class CodeGenVisitor : ASTVisitor
 			Write!("<=");
 		case .Spaceship:
 			Write!("<=>");
-		case .Is:
-			Write!("is");
-		case .As:
-			Write!("as");
 		case .Case:
 			Write!("case");
 		default:

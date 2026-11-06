@@ -3148,13 +3148,32 @@ namespace BeefParser
 			if (atGenericExpressionEnd())
 				return .Ok;
 
+			while (_currentToken.Type == .As || _currentToken.Type == .Is)
+			{
+				if (tryEat!(TokenType.As))
+				{
+					let cast = new DynamicCastExpr() { Target = expr };
+					expr = cast;
+					Parse!(typeSpec(ref cast.TypeSpec));
+					return .Ok;
+				}
+				else
+				{
+					eat!(TokenType.Is);
+					let check = new CheckTypeExpr() { Target = expr };
+					expr = check;
+					Parse!(typeSpec(ref check.TypeSpec));
+				}
+			}
+
+			if (atGenericExpressionEnd())
+				return .Ok;
+
 			if (tryEat!(TokenType.RArrow) ||
 			    tryEat!(TokenType.GreaterEq) ||
 				tryEat!(TokenType.LArrow) ||
 				tryEat!(TokenType.LesserEq) ||
 				tryEat!(TokenType.Spaceship) ||
-				tryEat!(TokenType.Is) ||
-				tryEat!(TokenType.As) ||
 				tryEat!(TokenType.Case))
 			{
 				let comparisonOpExpr = new ComparisonOpExpr()

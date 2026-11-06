@@ -13,8 +13,6 @@ namespace BeefParser.AST
 		Lesser,
 		LesserEqual,
 		Spaceship,
-		Is,
-		As,
 		Case
 	}
 
@@ -44,10 +42,6 @@ namespace BeefParser
 				return .LesserEqual;
 			case .Spaceship:
 				return .Spaceship;
-			case .Is:
-				return .Is;
-			case .As:
-				return .As;
 			case .Case:
 				return .Case;
 			default:
