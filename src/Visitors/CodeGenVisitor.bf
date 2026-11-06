@@ -2201,6 +2201,17 @@ public class CodeGenVisitor : ASTVisitor
 		return .Continue;
 	}
 
+	public override VisitResult Visit(ConstArgumentTypeSpec node)
+	{
+		Write!("const ");
+		// Preserve expression grouping when an operator could be a generic delimiter.
+		let needsParens = !(node.Value is Literal) && !(node.Value is IdentifierExpr);
+		if (needsParens) Write!("(");
+		Visit(node.Value);
+		if (needsParens) Write!(")");
+		return .Continue;
+	}
+
 	public override VisitResult Visit(DelegateTypeSpec node)
 	{
 		Write!(node.Type == .Delegate ? "delegate " : "function ");

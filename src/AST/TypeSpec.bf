@@ -56,6 +56,12 @@ namespace BeefParser.AST
 	class RefTypeSpec : ElementedTypeSpec
 	{
 	}
+
+	[ImplementAccept, ImplementToString]
+	class ConstArgumentTypeSpec : TypeSpec
+	{
+		public Expression Value ~ delete _;
+	}
 	
 	[ImplementAccept, ImplementToString]
 	class DelegateTypeSpec : TypeSpec

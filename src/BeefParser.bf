@@ -9,6 +9,23 @@ namespace BeefParser
 {
 	class BeefParser
 	{
+		private struct GenericExpressionState : IDisposable
+		{
+			public List<int> DelimiterDepths;
+			public int ExpressionDepth;
+
+			public this()
+			{
+				DelimiterDepths = new .();
+				ExpressionDepth = -1;
+			}
+
+			public void Dispose()
+			{
+				delete DelimiterDepths;
+			}
+		}
+
 		private Lexer _lexer ~ delete _;
 		private int _tokenIndex;
 		private List<Token> _tokens = new List<Token>() ~ Release!(_);
@@ -18,9 +35,11 @@ namespace BeefParser
 		private Token _nextToken => _tokens[_tokenIndex + 1];
 
 		private bool _usingAllowed = true;
+		private GenericExpressionState _genericExpressionState = .() ~ _.Dispose();
+		private ParserContext _context = new ParserContext() ~ delete _;
+
 		private int _lastFailureIndex = -1;
 		private bool _errorRaisen = false;
-		private ParserContext _context = new ParserContext() ~ delete _;
 
 		public bool BreakOnError = true;
 		public int ErrorPosition { get; private set; }
@@ -136,6 +155,21 @@ namespace BeefParser
 			{
 				_raiseError(_lexer.getCurrentPosition());
 				return .Err;
+			}
+
+			_genericExpressionState.DelimiterDepths.Clear();
+			int depth = 0;
+			for (let token in _tokens)
+			{
+				_genericExpressionState.DelimiterDepths.Add(depth);
+				switch (token.Type)
+				{
+				case .LParen, .LBracket, .LCurly, .InterpolationStart:
+					depth++;
+				case .RParen, .RBracket, .RCurly, .InterpolationEnd:
+					depth--;
+				default:
+				}
 			}
 
 			return .Ok;
@@ -270,6 +304,18 @@ namespace BeefParser
 			return .Ok;
 		}
 
+		private bool atGenericExpressionEnd()
+			=> _genericExpressionState.ExpressionDepth >= 0 && _currentToken.Type == .RArrow &&
+				_genericExpressionState.DelimiterDepths[_tokenIndex] == _genericExpressionState.ExpressionDepth;
+
+		private ParseResult<void> genericArgumentExpression(ref Expression expr)
+		{
+			// Closing chevrons end this expression only at its original delimiter depth.
+			// Parentheses, call arguments, indexing, and interpolation retain normal operators.
+			scope TemporaryChange<int>(ref _genericExpressionState.ExpressionDepth, _genericExpressionState.DelimiterDepths[_tokenIndex]);
+			return expression(ref expr);
+		}
+
 		private Result<void> parseGenericParameters(ref List<TypeSpec> types)
 		{
 			repeat
@@ -284,7 +330,14 @@ namespace BeefParser
 				// We do this to make sure even the errored TypeSpec gets deleted with the parent node.
 				TypeSpec* spec = types.GrowUninitialized(1);
 				*spec = null;
-				Parse!(typeSpec(ref *spec));
+				if (tryEat!(TokenType.Const))
+				{
+					let argument = new ConstArgumentTypeSpec();
+					*spec = argument;
+					Parse!(genericArgumentExpression(ref argument.Value));
+				}
+				else
+					Parse!(typeSpec(ref *spec));
 			}
 			while (tryEat!(TokenType.Comma));
 
@@ -395,6 +448,11 @@ namespace BeefParser
 
 			switch (_currentToken.Type)
 			{
+			case .Const:
+				eat!(TokenType.Const);
+				Expression value = null;
+				defer { delete value; }
+				return genericArgumentExpression(ref value);
 			case .Var, .Let, .Dot:
 				eat!(_currentToken.Type);
 				return .Ok;
@@ -2402,7 +2460,6 @@ namespace BeefParser
 				TryParseReturn!(lambdaOpExpr(ref expr, true));
 
 				eat!(TokenType.LParen);
-
 				Runtime.Assert(expr == null);
 
 				if (!TryParse!(expression(ref expr)))
@@ -3054,6 +3111,9 @@ namespace BeefParser
 		{
 			TryParse!(additiveExpr(ref expr));
 
+			if (atGenericExpressionEnd())
+				return expr == null ? .NotSuitable : .Ok;
+
 			if (tryEat!(TokenType.LShift) ||
 			    (_currentToken.Type != .EOF && _nextToken.Type == .RArrow && tryEat!(TokenType.RArrow)))
 			{
@@ -3079,6 +3139,9 @@ namespace BeefParser
 			
 			if (expr == null)
 				return .NotSuitable;
+
+			if (atGenericExpressionEnd())
+				return .Ok;
 
 			if (tryEat!(TokenType.RArrow) ||
 			    tryEat!(TokenType.GreaterEq) ||
