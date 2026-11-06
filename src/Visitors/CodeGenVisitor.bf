@@ -1752,6 +1752,11 @@ public class CodeGenVisitor : ASTVisitor
 	{
 		Visit(memberExpr.Expr);
 		Write!("!");
+		if (memberExpr.ScopeName != null)
+		{
+			Write!(":");
+			Write!(memberExpr.ScopeName);
+		}
 		return .Continue;
 	}
 

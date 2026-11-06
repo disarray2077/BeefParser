@@ -2562,10 +2562,13 @@ namespace BeefParser
 				switch (_lastToken.Type)
 				{
 				case .Not:
-					expr = new MixinMemberExpr()
+					let mixinMember = new MixinMemberExpr() { Expr = expr };
+					expr = mixinMember;
+					if (tryEat!(TokenType.Colon))
 					{
-						Expr = expr
-					};
+						eat!(_currentToken.Type == .Mixin ? TokenType.Mixin : TokenType.Identifier);
+						mixinMember.ScopeName = new .(_lastToken.AsText());
+					}
 				case .LArrow:
 					// The rollback needs to be set before the LArrow was eaten.
 					_tokenIndex--;
