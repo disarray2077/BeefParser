@@ -12,17 +12,51 @@ namespace BeefParser
 		private struct GenericExpressionState : IDisposable
 		{
 			public List<int> DelimiterDepths;
+			public int DepthAfterScannedTokens;
 			public int ExpressionDepth;
 
 			public this()
 			{
-				DelimiterDepths = new .();
+				DelimiterDepths = null;
+				DepthAfterScannedTokens = 0;
 				ExpressionDepth = -1;
 			}
 
-			public void Dispose()
+			public void EnsureDepthAt(List<Token> tokens, int index) mut
+			{
+				if (DelimiterDepths == null)
+					DelimiterDepths = new .();
+
+				int depth = DepthAfterScannedTokens;
+
+				for (int i = DelimiterDepths.Count; i <= index; i++)
+				{
+					DelimiterDepths.Add(depth);
+
+					switch (tokens[i].Type)
+					{
+					case .LParen, .LBracket, .LCurly, .InterpolationStart:
+						depth++;
+					case .RParen, .RBracket, .RCurly, .InterpolationEnd:
+						depth--;
+					default:
+					}
+				}
+
+				DepthAfterScannedTokens = depth;
+			}
+
+			public void Reset() mut
+			{
+				DelimiterDepths?.Clear();
+				DepthAfterScannedTokens = 0;
+			}
+
+			public void Dispose() mut
 			{
 				delete DelimiterDepths;
+				DelimiterDepths = null;
+				DepthAfterScannedTokens = 0;
 			}
 		}
 
@@ -151,25 +185,12 @@ namespace BeefParser
 		private Result<void> readTokens()
 		{
 			_tokens.Clear();
+			_genericExpressionState.Reset();
+
 			if (_lexer.GetAllTokens(ref _tokens) case .Err(let invalidChar))
 			{
 				_raiseError(_lexer.getCurrentPosition());
 				return .Err;
-			}
-
-			_genericExpressionState.DelimiterDepths.Clear();
-			int depth = 0;
-			for (let token in _tokens)
-			{
-				_genericExpressionState.DelimiterDepths.Add(depth);
-				switch (token.Type)
-				{
-				case .LParen, .LBracket, .LCurly, .InterpolationStart:
-					depth++;
-				case .RParen, .RBracket, .RCurly, .InterpolationEnd:
-					depth--;
-				default:
-				}
 			}
 
 			return .Ok;
@@ -305,13 +326,18 @@ namespace BeefParser
 		}
 
 		private bool atGenericExpressionEnd()
-			=> _genericExpressionState.ExpressionDepth >= 0 && _currentToken.Type == .RArrow &&
-				_genericExpressionState.DelimiterDepths[_tokenIndex] == _genericExpressionState.ExpressionDepth;
+		{
+			if (_genericExpressionState.ExpressionDepth < 0 || _currentToken.Type != .RArrow)
+				return false;
+			_genericExpressionState.EnsureDepthAt(_tokens, _tokenIndex);
+			return _genericExpressionState.DelimiterDepths[_tokenIndex] == _genericExpressionState.ExpressionDepth;
+		}
 
 		private ParseResult<void> genericArgumentExpression(ref Expression expr)
 		{
 			// Closing chevrons end this expression only at its original delimiter depth.
 			// Parentheses, call arguments, indexing, and interpolation retain normal operators.
+			_genericExpressionState.EnsureDepthAt(_tokens, _tokenIndex);
 			scope TemporaryChange<int>(ref _genericExpressionState.ExpressionDepth, _genericExpressionState.DelimiterDepths[_tokenIndex]);
 			return expression(ref expr);
 		}
